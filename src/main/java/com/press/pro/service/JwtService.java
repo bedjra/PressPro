@@ -1,7 +1,9 @@
 package com.press.pro.service;
 
 import com.press.pro.Entity.Utilisateur;
+import io.jsonwebtoken.Jwts;
 import org.springframework.stereotype.Service;
+import io.jsonwebtoken.SignatureAlgorithm;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -10,7 +12,7 @@ import java.util.Map;
 @Service
 public class JwtService {
 
-    private final String SECRET_KEY = "monsecretjwtultrasecurise";
+    private final String SECRET_KEY = "p5U7ZVkQ0ivBBEz0XJgnDvVCmj8vLTrTHVcVhu0xz0g=";
 
     public String generateToken(Utilisateur user) {
         Map<String, Object> claims = new HashMap<>();

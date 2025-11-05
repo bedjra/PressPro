@@ -1,25 +1,37 @@
 package com.press.pro.config;
 
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
+    // 🌍 Autoriser les requêtes depuis le frontend (Angular sur port 3000)
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/**") // toutes les routes
+                .allowedOrigins("http://localhost:3000")
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedHeaders("*")
+                .allowCredentials(true);
+    }
+
+    // ⚙️ Gérer les fichiers statiques et Swagger UI
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // ⚙️ Tes fichiers statiques (si tu en as dans src/main/resources/static)
+        // Fichiers statiques
         registry.addResourceHandler("/**")
                 .addResourceLocations("classpath:/static/")
                 .setCachePeriod(0);
 
-        // ⚙️ Swagger UI - nécessaire pour que l'interface Swagger fonctionne
+        // Swagger UI
         registry.addResourceHandler("/swagger-ui/**")
                 .addResourceLocations("classpath:/META-INF/resources/webjars/swagger-ui/")
                 .setCachePeriod(0);
 
-        // ⚙️ Springdoc OpenAPI JSON (les endpoints de documentation)
+        // Documentation OpenAPI JSON
         registry.addResourceHandler("/v3/api-docs/**")
                 .addResourceLocations("classpath:/META-INF/resources/");
     }

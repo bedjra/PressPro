@@ -1,48 +1,92 @@
 package com.press.pro.service;
 
-
+import com.press.pro.Dto.PressingRequest;
 import com.press.pro.Entity.Pressing;
+import com.press.pro.Entity.Utilisateur;
 import com.press.pro.repository.PressingRepository;
+import com.press.pro.repository.UtilisateurRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class PressingService {
 
-    private final PressingRepository pressingRepository;
+    @Autowired
+    private PressingRepository pressingRepository;
 
-    public PressingService(PressingRepository pressingRepository) {
-        this.pressingRepository = pressingRepository;
+    @Autowired
+    private UtilisateurRepository utilisateurRepository;
+
+    @Autowired
+    private JwtService jwtService;
+
+    /**
+     * Création d’un pressing et association à l’utilisateur connecté
+     */
+    public Pressing createPressing(PressingRequest req, String token) {
+        String email = jwtService.extractEmail(token.substring(7)); // retirer "Bearer "
+        Utilisateur user = utilisateurRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+
+        if (user.getPressing() != null) {
+            throw new RuntimeException("Vous avez déjà un pressing associé");
+        }
+
+        Pressing pressing = new Pressing();
+        pressing.setNom(req.getNom());
+        pressing.setEmail(req.getEmail());
+        pressing.setTelephone(req.getTelephone());
+        pressing.setAdresse(req.getAdresse());
+        pressing.setLogo(req.getLogo());
+
+        pressingRepository.save(pressing);
+
+        user.setPressing(pressing);
+        utilisateurRepository.save(user);
+
+        return pressing;
     }
 
+    /**
+     * Récupérer la liste de tous les pressings
+     */
     public List<Pressing> getAllPressings() {
         return pressingRepository.findAll();
     }
 
-    public Optional<Pressing> getPressingById(Long id) {
-        return pressingRepository.findById(id);
+    /**
+     * Récupérer un pressing par son ID
+     */
+    public Pressing getPressingById(Long id) {
+        return pressingRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Pressing non trouvé avec l'id : " + id));
     }
 
-    public Pressing createPressing(Pressing pressing) {
-        return pressingRepository.save(pressing);
-    }
-
-    public Pressing updatePressing(Long id, Pressing pressingDetails) {
+    /**
+     * Mettre à jour un pressing
+     */
+    public Pressing updatePressing(Long id, PressingRequest req) {
         Pressing pressing = pressingRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Pressing non trouvé avec l'id : " + id));
 
-        pressing.setNom(pressingDetails.getNom());
-        pressing.setEmail(pressingDetails.getEmail());
-        pressing.setTelephone(pressingDetails.getTelephone());
-        pressing.setAdresse(pressingDetails.getAdresse());
-        pressing.setLogo(pressingDetails.getLogo());
+        pressing.setNom(req.getNom());
+        pressing.setEmail(req.getEmail());
+        pressing.setTelephone(req.getTelephone());
+        pressing.setAdresse(req.getAdresse());
+        pressing.setLogo(req.getLogo());
 
         return pressingRepository.save(pressing);
     }
 
+    /**
+     * Supprimer un pressing
+     */
     public void deletePressing(Long id) {
-        pressingRepository.deleteById(id);
+        Pressing pressing = pressingRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Pressing non trouvé avec l'id : " + id));
+
+        pressingRepository.delete(pressing);
     }
 }

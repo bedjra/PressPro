@@ -26,6 +26,22 @@ public class Pressing {
 
 
 
+    public Pressing(String nom, String logo, String email, String telephone, String adresse) {
+        this.nom = nom;
+        this.logo = logo.getBytes();
+        this.email = email;
+        this.telephone = telephone;
+        this.adresse = adresse;
+    }
+
+    public Pressing() {
+
+    }
+
+
+    // Getters et setters
+
+
 
     public byte[] getLogo() {
         return logo;
