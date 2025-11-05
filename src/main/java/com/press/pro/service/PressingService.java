@@ -37,6 +37,7 @@ public class PressingService {
         pressing.setEmail(pressingDetails.getEmail());
         pressing.setTelephone(pressingDetails.getTelephone());
         pressing.setAdresse(pressingDetails.getAdresse());
+        pressing.setLogo(pressingDetails.getLogo());
 
         return pressingRepository.save(pressing);
     }

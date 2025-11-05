@@ -9,22 +9,25 @@ public class Pressing {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Lob
+    private byte[] logo;
     private String nom;
     private String email;
     private String telephone;
     private String adresse;
 
-//    // constructeur vide
-//    public Pressing() {}
 
-//    // constructeur complet
-//    public Pressing(String nom, String email, String telephone, String adresse) {
-//        this.nom = nom;
-//        this.email = email;
-//        this.telephone = telephone;
-//        this.adresse = adresse;
-//    }
 
+
+
+
+    public byte[] getLogo() {
+        return logo;
+    }
+
+    public void setLogo(byte[] logo) {
+        this.logo = logo;
+    }
 
     public Long getId() {
         return id;
