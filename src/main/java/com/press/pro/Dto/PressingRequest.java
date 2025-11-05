@@ -8,6 +8,8 @@ public class PressingRequest {
     private String email;
     private String telephone;
     private String adresse;
+
+
     // Getters & Setters
 
     public byte[] getLogo() {
