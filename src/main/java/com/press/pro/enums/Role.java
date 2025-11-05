@@ -1,7 +1,7 @@
-package com.estock.stock.enums;
+package com.press.pro.enums;
 
 public enum Role {
-    ADMIN,SECRETAIRE
+    ADMIN,COMPTOIR
 }
 
 
