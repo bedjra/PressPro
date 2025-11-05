@@ -1,31 +1,14 @@
-package com.press.pro.Entity;
-
-import jakarta.persistence.*;
-
-import java.util.ArrayList;
-import java.util.List;
+package com.press.pro.Dto;
 
 
-@Entity
-public class Pressing {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class PressingRequest {
 
-    @Lob
     private byte[] logo;
     private String nom;
     private String email;
     private String telephone;
     private String adresse;
-
-
-    @OneToMany(mappedBy = "pressing")
-    private List<Utilisateur> utilisateurs = new ArrayList<>();
-
-
-
-
+    // Getters & Setters
 
     public byte[] getLogo() {
         return logo;
@@ -33,14 +16,6 @@ public class Pressing {
 
     public void setLogo(byte[] logo) {
         this.logo = logo;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public String getNom() {
@@ -73,13 +48,5 @@ public class Pressing {
 
     public void setAdresse(String adresse) {
         this.adresse = adresse;
-    }
-
-    public List<Utilisateur> getUtilisateurs() {
-        return utilisateurs;
-    }
-
-    public void setUtilisateurs(List<Utilisateur> utilisateurs) {
-        this.utilisateurs = utilisateurs;
     }
 }
