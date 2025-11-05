@@ -6,6 +6,6 @@ import com.press.pro.Entity.Parametre;
 import java.util.Optional;
 
 public interface ParametreRepository extends JpaRepository<Parametre, Long> {
-    Optional<Parametre> findByArticleAndService(String article, String service);
+//    Optional<Parametre> findByArticleAndService(String article, String service);
 
 }
