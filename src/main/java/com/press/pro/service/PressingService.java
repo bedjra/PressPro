@@ -2,7 +2,7 @@ package com.press.pro.service;
 
 
 import com.press.pro.Entity.Pressing;
-import com.press.pro.Repository.PressingRepository;
+import com.press.pro.repository.PressingRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
