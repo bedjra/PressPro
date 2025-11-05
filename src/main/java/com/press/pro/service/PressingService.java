@@ -25,15 +25,23 @@ public class PressingService {
     /**
      * Création d’un pressing et association à l’utilisateur connecté
      */
+
+
+
+
+
     public Pressing createPressing(PressingRequest req, String token) {
+        // ⚡ Récupérer l'email de l'utilisateur depuis le token JWT
         String email = jwtService.extractEmail(token.substring(7)); // retirer "Bearer "
         Utilisateur user = utilisateurRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
 
+        // ⚡ Vérifier si l'utilisateur a déjà un pressing
         if (user.getPressing() != null) {
             throw new RuntimeException("Vous avez déjà un pressing associé");
         }
 
+        // ⚡ Créer le pressing
         Pressing pressing = new Pressing();
         pressing.setNom(req.getNom());
         pressing.setEmail(req.getEmail());
@@ -43,11 +51,13 @@ public class PressingService {
 
         pressingRepository.save(pressing);
 
+        // ⚡ Lier automatiquement le pressing à l'utilisateur (admin)
         user.setPressing(pressing);
         utilisateurRepository.save(user);
 
         return pressing;
     }
+
 
     /**
      * Récupérer la liste de tous les pressings

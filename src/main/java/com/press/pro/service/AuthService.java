@@ -20,6 +20,21 @@ public class AuthService {
     @Autowired
     private JwtService jwtService;
 
+//    public String register(RegisterRequest request) {
+//        if (utilisateurRepository.findByEmail(request.getEmail()).isPresent()) {
+//            throw new RuntimeException("Email déjà utilisé");
+//        }
+//
+//        Utilisateur user = new Utilisateur(
+//                request.getEmail(),
+//                passwordEncoder.encode(request.getPassword()),
+//                request.getRole()
+//        );
+//
+//        utilisateurRepository.save(user);
+//        return jwtService.generateToken(user);
+//    }
+
     public String register(RegisterRequest request) {
         if (utilisateurRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new RuntimeException("Email déjà utilisé");
@@ -31,9 +46,14 @@ public class AuthService {
                 request.getRole()
         );
 
+//        // ⚡ Lier l’utilisateur au même pressing que le créateur (admin)
+//        user.setPressing(creator.getPressing());
+
         utilisateurRepository.save(user);
         return jwtService.generateToken(user);
     }
+
+
 
     public String login(LoginRequest request) {
         Utilisateur user = utilisateurRepository.findByEmail(request.getEmail())
@@ -45,4 +65,6 @@ public class AuthService {
 
         return jwtService.generateToken(user);
     }
+
+
 }

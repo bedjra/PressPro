@@ -35,4 +35,13 @@ public class JwtService {
                 .getBody()
                 .getSubject();
     }
+
+    public String extractUsername(String token) {
+        return Jwts.parser()
+                .setSigningKey(SECRET_KEY)
+                .parseClaimsJws(token)
+                .getBody()
+                .getSubject();
+    }
+
 }
