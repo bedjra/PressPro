@@ -1,8 +1,8 @@
 package com.press.pro.Entity;
 
+import com.press.pro.enums.StatutClient;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-
 
 @Entity
 public class Client {
@@ -14,8 +14,12 @@ public class Client {
     private String nom;
     private String telephone;
     private String adresse;
+    private String activite;
 
-    private LocalDateTime date; // sera générée automatiquement
+    @Enumerated(EnumType.STRING)
+    private StatutClient statutClient;
+
+    private LocalDateTime date; // générée automatiquement
 
     @ManyToOne
     @JoinColumn(name = "pressing_id")
@@ -24,16 +28,20 @@ public class Client {
     @PrePersist
     protected void onCreate() {
         this.date = LocalDateTime.now();
+        this.statutClient = StatutClient.Actif; // statut par défaut
     }
 
     // Constructeurs
     public Client() {}
 
-    public Client(String nom, String telephone, String adresse, Pressing pressing) {
+    public Client(String nom, String telephone, String adresse, String activite, Pressing pressing) {
         this.nom = nom;
         this.telephone = telephone;
         this.adresse = adresse;
+        this.activite = activite;
         this.pressing = pressing;
+        this.statutClient = StatutClient.Actif;
+        this.date = LocalDateTime.now();
     }
 
     // Getters / Setters
@@ -48,6 +56,12 @@ public class Client {
 
     public String getAdresse() { return adresse; }
     public void setAdresse(String adresse) { this.adresse = adresse; }
+
+    public String getActivite() { return activite; }
+    public void setActivite(String activite) { this.activite = activite; }
+
+    public StatutClient getStatutClient() { return statutClient; }
+    public void setStatutClient(StatutClient statutClient) { this.statutClient = statutClient; }
 
     public LocalDateTime getDate() { return date; }
     public void setDate(LocalDateTime date) { this.date = date; }
