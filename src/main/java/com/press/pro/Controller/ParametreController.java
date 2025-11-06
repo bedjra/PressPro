@@ -12,7 +12,6 @@ import java.util.List;
 @Tag(name = "Tarif")
 @RestController
 @RequestMapping("/api/parametre")
-@CrossOrigin(origins = "*")
 public class ParametreController {
 
     @Autowired
