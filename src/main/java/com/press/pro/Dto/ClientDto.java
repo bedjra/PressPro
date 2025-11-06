@@ -1,9 +1,6 @@
 package com.press.pro.Dto;
 
 import com.press.pro.enums.StatutClient;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-
 import java.time.LocalDateTime;
 
 public class ClientDto {
@@ -12,11 +9,10 @@ public class ClientDto {
     private String nom;
     private String telephone;
     private String adresse;
-    @Enumerated(EnumType.STRING)
     private StatutClient statutClient;
     private LocalDateTime date;
 
-    // Getters & Setters
+    // 🟢 Getters & Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -29,14 +25,8 @@ public class ClientDto {
     public String getAdresse() { return adresse; }
     public void setAdresse(String adresse) { this.adresse = adresse; }
 
-    public StatutClient getStatutClient() {
-        return statutClient;
-    }
-
-
-    public void setStatutClient(StatutClient statutClient) {
-        this.statutClient = statutClient;
-    }
+    public StatutClient getStatutClient() { return statutClient; }
+    public void setStatutClient(StatutClient statutClient) { this.statutClient = statutClient; }
 
     public LocalDateTime getDate() { return date; }
     public void setDate(LocalDateTime date) { this.date = date; }

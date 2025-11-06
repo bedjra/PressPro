@@ -24,7 +24,7 @@ public class ClientService {
         dto.setNom(client.getNom());
         dto.setTelephone(client.getTelephone());
         dto.setAdresse(client.getAdresse());
-        dto.setStatutClient(StatutClient.valueOf(client.getStatutClient().name()));
+        dto.setStatutClient(client.getStatutClient());
         dto.setDate(client.getDate());
         return dto;
     }
@@ -35,9 +35,10 @@ public class ClientService {
         client.setNom(dto.getNom());
         client.setTelephone(dto.getTelephone());
         client.setAdresse(dto.getAdresse());
+        client.setDate(dto.getDate() != null ? dto.getDate() : java.time.LocalDateTime.now());
 
         // Par défaut, statut = Actif à la création
-        client.setStatutClient(StatutClient.Actif);
+        client.setStatutClient(dto.getStatutClient() != null ? dto.getStatutClient() : StatutClient.Actif);
         return client;
     }
 
@@ -49,7 +50,7 @@ public class ClientService {
         return toDto(saved);
     }
 
-    // ✅ Lister les clients du pressing
+    // ✅ Lister les clients du pressing connecté
     public List<ClientDto> getClients(Utilisateur utilisateurConnecte) {
         return clientRepository.findByPressing(utilisateurConnecte.getPressing())
                 .stream()
@@ -80,7 +81,11 @@ public class ClientService {
         client.setTelephone(updatedDto.getTelephone());
         client.setAdresse(updatedDto.getAdresse());
 
-        // le statut reste inchangé sauf si tu veux le changer manuellement plus tard
+        // Facultatif : si le statut est modifiable
+        if (updatedDto.getStatutClient() != null) {
+            client.setStatutClient(updatedDto.getStatutClient());
+        }
+
         Client saved = clientRepository.save(client);
         return toDto(saved);
     }
