@@ -18,16 +18,17 @@ public class Client {
     @Enumerated(EnumType.STRING)
     private StatutClient statutClient;
 
-    private LocalDateTime date; // générée automatiquement
+    private LocalDateTime date;
 
     @ManyToOne
     @JoinColumn(name = "pressing_id")
     private Pressing pressing;
 
+
     @PrePersist
     protected void onCreate() {
         this.date = LocalDateTime.now();
-        this.statutClient = StatutClient.Actif; // statut par défaut
+        this.statutClient = StatutClient.Actif;
     }
 
     // Constructeurs

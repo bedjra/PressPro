@@ -29,18 +29,27 @@ public class ClientService {
         return dto;
     }
 
-    // 🔹 Convertir ClientDto → Client
     private Client toEntity(ClientDto dto) {
         Client client = new Client();
         client.setNom(dto.getNom());
         client.setTelephone(dto.getTelephone());
         client.setAdresse(dto.getAdresse());
-        client.setDate(dto.getDate() != null ? dto.getDate() : java.time.LocalDateTime.now());
-
-        // Par défaut, statut = Actif à la création
-        client.setStatutClient(dto.getStatutClient() != null ? dto.getStatutClient() : StatutClient.Actif);
         return client;
     }
+
+
+//    // 🔹 Convertir ClientDto → Client
+//    private Client toEntity(ClientDto dto) {
+//        Client client = new Client();
+//        client.setNom(dto.getNom());
+//        client.setTelephone(dto.getTelephone());
+//        client.setAdresse(dto.getAdresse());
+//        client.setDate(dto.getDate() != null ? dto.getDate() : java.time.LocalDateTime.now());
+//
+//        // Par défaut, statut = Actif à la création
+//        client.setStatutClient(dto.getStatutClient() != null ? dto.getStatutClient() : StatutClient.Actif);
+//        return client;
+//    }
 
     // ✅ Créer un client
     public ClientDto createClient(ClientDto clientDto, Utilisateur utilisateurConnecte) {
