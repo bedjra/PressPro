@@ -22,33 +22,46 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http
+        http
+                // 🚫 Désactive CSRF (utile uniquement pour les applis web avec session)
                 .csrf(csrf -> csrf.disable())
+
+                // ✅ Configuration des permissions
                 .authorizeHttpRequests(auth -> auth
-                        // ✅ Autoriser librement ces endpoints
+                        // Autoriser librement les endpoints d'authentification et Swagger
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/swagger-ui/**",
-                                "/v3/api-docs/**"
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**",
+                                "/v3/api-docs.yaml",
+                                "/api-docs/**",
+                                "/webjars/**"
                         ).permitAll()
-                        // 🚫 Le reste nécessite un token JWT valide
+
+                        // Le reste nécessite un JWT valide
                         .anyRequest().authenticated()
                 )
+
+                // ✅ Pas de session : JWT only
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-                .build();
+
+                // ✅ Ajoute le filtre JWT avant le filtre d’auth standard
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
     }
 
+    // ✅ Gestionnaire d'authentification
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config)
             throws Exception {
         return config.getAuthenticationManager();
     }
 
-
-
+    // ✅ Encodeur de mots de passe
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

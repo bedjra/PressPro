@@ -2,14 +2,15 @@ package com.press.pro.Controller;
 
 import com.press.pro.Dto.LoginRequest;
 import com.press.pro.Dto.RegisterRequest;
+import com.press.pro.Entity.Utilisateur;
 import com.press.pro.service.AuthService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -28,6 +29,19 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
+    }
+
+    @GetMapping("/comptes")
+    public ResponseEntity<List<RegisterRequest>> getAllComptesByAdminConnecte() {
+        List<RegisterRequest> comptes = authService.getAllComptesByAdminConnecte();
+        return ResponseEntity.ok(comptes);
+    }
+
+
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Utilisateur> updateUtilisateur(@PathVariable Long id, @RequestBody RegisterRequest request) {
+        return ResponseEntity.ok(authService.updateUser(id, request));
     }
 }
 
