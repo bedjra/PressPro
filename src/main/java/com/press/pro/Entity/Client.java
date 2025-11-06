@@ -33,7 +33,7 @@ public class Client {
     // Constructeurs
     public Client() {}
 
-    public Client(String nom, String telephone, String adresse, String activite, Pressing pressing) {
+    public Client(String nom, String telephone, String adresse,  Pressing pressing) {
         this.nom = nom;
         this.telephone = telephone;
         this.adresse = adresse;

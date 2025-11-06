@@ -3,6 +3,7 @@ package com.press.pro.service;
 import com.press.pro.Dto.ClientDto;
 import com.press.pro.Entity.Client;
 import com.press.pro.Entity.Utilisateur;
+import com.press.pro.enums.StatutClient;
 import com.press.pro.repository.ClientRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -16,23 +17,27 @@ public class ClientService {
     @Autowired
     private ClientRepository clientRepository;
 
-    // 🟢 Convertir Client → ClientDto
+    // 🔹 Convertir Client → ClientDto
     private ClientDto toDto(Client client) {
         ClientDto dto = new ClientDto();
         dto.setId(client.getId());
         dto.setNom(client.getNom());
         dto.setTelephone(client.getTelephone());
         dto.setAdresse(client.getAdresse());
+        dto.setStatutClient(StatutClient.valueOf(client.getStatutClient().name()));
         dto.setDate(client.getDate());
         return dto;
     }
 
-    // 🟢 Convertir ClientDto → Client
+    // 🔹 Convertir ClientDto → Client
     private Client toEntity(ClientDto dto) {
         Client client = new Client();
         client.setNom(dto.getNom());
         client.setTelephone(dto.getTelephone());
         client.setAdresse(dto.getAdresse());
+
+        // Par défaut, statut = Actif à la création
+        client.setStatutClient(StatutClient.Actif);
         return client;
     }
 
@@ -66,6 +71,7 @@ public class ClientService {
     public ClientDto updateClient(Long id, ClientDto updatedDto, Utilisateur utilisateurConnecte) {
         Client client = clientRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Client non trouvé"));
+
         if (!client.getPressing().equals(utilisateurConnecte.getPressing())) {
             throw new RuntimeException("Accès refusé : client d'un autre pressing");
         }
@@ -74,6 +80,7 @@ public class ClientService {
         client.setTelephone(updatedDto.getTelephone());
         client.setAdresse(updatedDto.getAdresse());
 
+        // le statut reste inchangé sauf si tu veux le changer manuellement plus tard
         Client saved = clientRepository.save(client);
         return toDto(saved);
     }
