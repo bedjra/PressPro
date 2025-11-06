@@ -1,35 +1,32 @@
-package com.press.pro.Entity;
+package com.press.pro.Dto;
 
-import jakarta.persistence.*;
+public class ParametreDto {
 
-@Entity
-public class Parametre {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     private String article;
     private String service;
     private Double prix;
 
-    @ManyToOne
-    @JoinColumn(name = "pressing_id")
-    private Pressing pressing;
-
-
-    public Parametre() {
+    // 🔹 Constructeur vide
+    public ParametreDto() {
     }
 
-    // 🔹 Constructeur sans id (utile pour créer un nouvel objet avant persistance)
-    public Parametre(String article, String service, Double prix, Pressing pressing) {
+    // 🔹 Constructeur sans id (utile pour la création)
+    public ParametreDto(String article, String service, Double prix) {
         this.article = article;
         this.service = service;
         this.prix = prix;
-        this.pressing = pressing;
     }
 
+    // 🔹 Constructeur complet
+    public ParametreDto(Long id, String article, String service, Double prix) {
+        this.id = id;
+        this.article = article;
+        this.service = service;
+        this.prix = prix;
+    }
 
+    // 🔹 Getters et setters
     public Long getId() {
         return id;
     }
@@ -60,13 +57,5 @@ public class Parametre {
 
     public void setPrix(Double prix) {
         this.prix = prix;
-    }
-
-    public Pressing getPressing() {
-        return pressing;
-    }
-
-    public void setPressing(Pressing pressing) {
-        this.pressing = pressing;
     }
 }

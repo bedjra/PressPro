@@ -43,5 +43,10 @@ public class JwtService {
                 .getBody()
                 .getSubject();
     }
+    public String getSecretKey() {
+        return SECRET_KEY;
+    }
+
+
 
 }
