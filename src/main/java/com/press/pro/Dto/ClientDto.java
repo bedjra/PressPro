@@ -3,10 +3,12 @@ package com.press.pro.Dto;
 import java.time.LocalDateTime;
 
 public class ClientDto {
+
     private Long id;
     private String nom;
     private String telephone;
     private String adresse;
+    private String statutClient;
     private LocalDateTime date;
 
     // Getters & Setters
@@ -21,6 +23,10 @@ public class ClientDto {
 
     public String getAdresse() { return adresse; }
     public void setAdresse(String adresse) { this.adresse = adresse; }
+
+  
+    public String getStatutClient() { return statutClient; }
+    public void setStatutClient(String statutClient) { this.statutClient = statutClient; }
 
     public LocalDateTime getDate() { return date; }
     public void setDate(LocalDateTime date) { this.date = date; }

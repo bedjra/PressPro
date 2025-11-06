@@ -14,7 +14,6 @@ public class Client {
     private String nom;
     private String telephone;
     private String adresse;
-    private String activite;
 
     @Enumerated(EnumType.STRING)
     private StatutClient statutClient;
@@ -38,7 +37,6 @@ public class Client {
         this.nom = nom;
         this.telephone = telephone;
         this.adresse = adresse;
-        this.activite = activite;
         this.pressing = pressing;
         this.statutClient = StatutClient.Actif;
         this.date = LocalDateTime.now();
@@ -57,8 +55,6 @@ public class Client {
     public String getAdresse() { return adresse; }
     public void setAdresse(String adresse) { this.adresse = adresse; }
 
-    public String getActivite() { return activite; }
-    public void setActivite(String activite) { this.activite = activite; }
 
     public StatutClient getStatutClient() { return statutClient; }
     public void setStatutClient(StatutClient statutClient) { this.statutClient = statutClient; }
