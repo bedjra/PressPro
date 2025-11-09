@@ -23,7 +23,6 @@ public class Commande {
 
     // 🔹 Champs principaux
     private int qte;
-    private double prixUnitaire;
 
     // 🔹 Dates
     private LocalDateTime date;
@@ -67,42 +66,103 @@ public class Commande {
     }
 
     // --- Getters & Setters ---
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
 
-    public Client getClient() { return client; }
-    public void setClient(Client client) { this.client = client; }
 
-    public Parametre getParametre() { return parametre; }
-    public void setParametre(Parametre parametre) { this.parametre = parametre; }
+    public Long getId() {
+        return id;
+    }
 
-    public int getQte() { return qte; }
-    public void setQte(int qte) { this.qte = qte; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public double getPrixUnitaire() { return prixUnitaire; }
-    public void setPrixUnitaire(double prixUnitaire) { this.prixUnitaire = prixUnitaire; }
+    public Client getClient() {
+        return client;
+    }
 
-    public LocalDateTime getDate() { return date; }
-    public void setDate(LocalDateTime date) { this.date = date; }
+    public void setClient(Client client) {
+        this.client = client;
+    }
 
-    public LocalDateTime getDateLivraison() { return dateLivraison; }
-    public void setDateLivraison(LocalDateTime dateLivraison) { this.dateLivraison = dateLivraison; }
+    public Parametre getParametre() {
+        return parametre;
+    }
 
-    public LocalDateTime getDateLivraisonExpress() { return dateLivraisonExpress; }
-    public void setDateLivraisonExpress(LocalDateTime dateLivraisonExpress) { this.dateLivraisonExpress = dateLivraisonExpress; }
+    public void setParametre(Parametre parametre) {
+        this.parametre = parametre;
+    }
 
-    public boolean isExpress() { return express; }
-    public void setExpress(boolean express) { this.express = express; }
+    public int getQte() {
+        return qte;
+    }
 
-    public Double getPrixExpress() { return prixExpress; }
-    public void setPrixExpress(Double prixExpress) { this.prixExpress = prixExpress; }
+    public void setQte(int qte) {
+        this.qte = qte;
+    }
 
-    public Double getRemise() { return remise; }
-    public void setRemise(Double remise) { this.remise = remise; }
 
-    public StatutCommande getStatutCommande() { return statutCommande; }
-    public void setStatutCommande(StatutCommande statutCommande) { this.statutCommande = statutCommande; }
 
-    public Pressing getPressing() { return pressing; }
-    public void setPressing(Pressing pressing) { this.pressing = pressing; }
+    public LocalDateTime getDate() {
+        return date;
+    }
+
+    public void setDate(LocalDateTime date) {
+        this.date = date;
+    }
+
+    public LocalDateTime getDateLivraison() {
+        return dateLivraison;
+    }
+
+    public void setDateLivraison(LocalDateTime dateLivraison) {
+        this.dateLivraison = dateLivraison;
+    }
+
+    public LocalDateTime getDateLivraisonExpress() {
+        return dateLivraisonExpress;
+    }
+
+    public void setDateLivraisonExpress(LocalDateTime dateLivraisonExpress) {
+        this.dateLivraisonExpress = dateLivraisonExpress;
+    }
+
+    public boolean isExpress() {
+        return express;
+    }
+
+    public void setExpress(boolean express) {
+        this.express = express;
+    }
+
+    public Double getPrixExpress() {
+        return prixExpress;
+    }
+
+    public void setPrixExpress(Double prixExpress) {
+        this.prixExpress = prixExpress;
+    }
+
+    public Double getRemise() {
+        return remise;
+    }
+
+    public void setRemise(Double remise) {
+        this.remise = remise;
+    }
+
+    public StatutCommande getStatutCommande() {
+        return statutCommande;
+    }
+
+    public void setStatutCommande(StatutCommande statutCommande) {
+        this.statutCommande = statutCommande;
+    }
+
+    public Pressing getPressing() {
+        return pressing;
+    }
+
+    public void setPressing(Pressing pressing) {
+        this.pressing = pressing;
+    }
 }
