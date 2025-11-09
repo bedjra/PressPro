@@ -29,6 +29,8 @@ public class Utilisateur implements UserDetails {
     @JoinColumn(name = "pressing_id")
     private Pressing pressing;
 
+    
+
     public Utilisateur() {}
 
     public Utilisateur(String email, String password, Role role) {

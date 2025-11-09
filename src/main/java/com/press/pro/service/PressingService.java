@@ -3,11 +3,13 @@ package com.press.pro.service;
 import com.press.pro.Dto.PressingRequest;
 import com.press.pro.Entity.Pressing;
 import com.press.pro.Entity.Utilisateur;
+import com.press.pro.enums.Role;
 import com.press.pro.repository.PressingRepository;
 import com.press.pro.repository.UtilisateurRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -27,11 +29,18 @@ public class PressingService {
                 .orElseThrow(() -> new RuntimeException("Utilisateur connecté introuvable"));
     }
 
+    // 🔹 Mise à jour d’un pressing
+    @Transactional
     public Pressing updatePressing(Long id, PressingRequest req) {
         Pressing pressing = pressingRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Pressing introuvable"));
 
-        // Mets à jour les champs nécessaires
+        Utilisateur user = getUtilisateurConnecte();
+        // ⚡ Vérification : seul l’admin du pressing peut modifier
+        if (pressing.getAdmin() != null && !pressing.getAdmin().getId().equals(user.getId())) {
+            throw new RuntimeException("Vous n'êtes pas autorisé à modifier ce pressing");
+        }
+
         pressing.setNom(req.getNom());
         pressing.setAdresse(req.getAdresse());
         pressing.setTelephone(req.getTelephone());
@@ -41,6 +50,7 @@ public class PressingService {
     }
 
     // 🔹 Création d’un pressing et association à l’admin
+    @Transactional
     public PressingRequest createPressing(PressingRequest req) {
         Utilisateur user = getUtilisateurConnecte();
 
@@ -50,13 +60,14 @@ public class PressingService {
 
         Pressing pressing = new Pressing();
         pressing.setNom(req.getNom());
-        pressing.setEmail(user.getEmail());   // Email de l'admin
-        pressing.setTelephone(req.getTelephone());
+        pressing.setEmail(user.getEmail()); // Email de l’admin
         pressing.setAdresse(req.getAdresse());
+        pressing.setTelephone(req.getTelephone());
         pressing.setLogo(req.getLogo());
 
         pressingRepository.save(pressing);
 
+        // ⚡ Associer le pressing à l’utilisateur
         user.setPressing(pressing);
         utilisateurRepository.save(user);
 
@@ -75,28 +86,36 @@ public class PressingService {
         return mapToDto(pressing);
     }
 
-    // 🔹 Suppression d’un pressing (seul l’admin propriétaire)
+    // 🔹 Suppression d’un pressing
+    @Transactional
     public void deletePressing(Long id) {
         Pressing pressing = pressingRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Pressing non trouvé"));
 
         Utilisateur user = getUtilisateurConnecte();
-        if (!pressing.getEmail().equals(user.getEmail())) {
+        if (pressing.getAdmin() != null && !pressing.getAdmin().getId().equals(user.getId())) {
             throw new RuntimeException("Vous n’êtes pas autorisé à supprimer ce pressing");
+        }
+
+        // ⚡ Détacher le pressing de l’admin avant suppression
+        if (pressing.getAdmin() != null) {
+            Utilisateur admin = pressing.getAdmin();
+            admin.setPressing(null);
+            utilisateurRepository.save(admin);
         }
 
         pressingRepository.delete(pressing);
     }
 
-    // 🔹 Récupérer tous les pressings (optionnel, selon rôle)
+    // 🔹 Récupérer tous les pressings selon rôle
     public List<PressingRequest> getAllPressings() {
         Utilisateur user = getUtilisateurConnecte();
-
         List<Pressing> pressings;
-        if (user.getRole().equals(com.press.pro.enums.Role.ADMIN)) {
+
+        if (user.getRole().equals(Role.ADMIN)) {
             pressings = pressingRepository.findAll();
         } else {
-            pressings = List.of(user.getPressing());
+            pressings = user.getPressing() != null ? List.of(user.getPressing()) : List.of();
         }
 
         return pressings.stream().map(this::mapToDto).toList();
