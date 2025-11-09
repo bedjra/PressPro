@@ -4,7 +4,9 @@ import com.press.pro.Dto.ParametreDto;
 import com.press.pro.Entity.Parametre;
 import com.press.pro.Entity.Utilisateur;
 import com.press.pro.repository.ParametreRepository;
+import com.press.pro.repository.UtilisateurRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,6 +17,9 @@ public class ParametreService {
 
     @Autowired
     private ParametreRepository parametreRepository;
+
+    @Autowired
+    private UtilisateurRepository utilisateurRepository;
 
     // 🔹 Convertir Parametre → ParametreDto
     private ParametreDto toDto(Parametre param) {
@@ -35,8 +40,16 @@ public class ParametreService {
         return param;
     }
 
+    // 🔹 Récupérer l'utilisateur connecté
+    private Utilisateur getUtilisateurConnecte() {
+        String emailConnecte = SecurityContextHolder.getContext().getAuthentication().getName();
+        return utilisateurRepository.findByEmail(emailConnecte.toLowerCase().trim())
+                .orElseThrow(() -> new RuntimeException("Utilisateur connecté introuvable"));
+    }
+
     // ✅ Créer un paramètre
-    public ParametreDto createParametre(ParametreDto dto, Utilisateur utilisateurConnecte) {
+    public ParametreDto createParametre(ParametreDto dto) {
+        Utilisateur utilisateurConnecte = getUtilisateurConnecte();
         Parametre param = toEntity(dto);
         param.setPressing(utilisateurConnecte.getPressing());
 
@@ -44,10 +57,9 @@ public class ParametreService {
         return toDto(saved);
     }
 
-
-
     // ✅ Récupérer un paramètre par ID
-    public ParametreDto getParametreById(Long id, Utilisateur utilisateurConnecte) {
+    public ParametreDto getParametreById(Long id) {
+        Utilisateur utilisateurConnecte = getUtilisateurConnecte();
         Parametre param = parametreRepository.findDistinctByIdWithPressing(id)
                 .orElseThrow(() -> new RuntimeException("Paramètre non trouvé"));
 
@@ -59,7 +71,8 @@ public class ParametreService {
     }
 
     // ✅ Mettre à jour un paramètre
-    public ParametreDto updateParametre(Long id, ParametreDto dto, Utilisateur utilisateurConnecte) {
+    public ParametreDto updateParametre(Long id, ParametreDto dto) {
+        Utilisateur utilisateurConnecte = getUtilisateurConnecte();
         Parametre param = parametreRepository.findDistinctByIdWithPressing(id)
                 .orElseThrow(() -> new RuntimeException("Paramètre non trouvé"));
 
@@ -76,7 +89,8 @@ public class ParametreService {
     }
 
     // ✅ Supprimer un paramètre
-    public void deleteParametre(Long id, Utilisateur utilisateurConnecte) {
+    public void deleteParametre(Long id) {
+        Utilisateur utilisateurConnecte = getUtilisateurConnecte();
         Parametre param = parametreRepository.findDistinctByIdWithPressing(id)
                 .orElseThrow(() -> new RuntimeException("Paramètre non trouvé"));
 
@@ -87,7 +101,9 @@ public class ParametreService {
         parametreRepository.delete(param);
     }
 
-    public List<ParametreDto> getAllParametres(Utilisateur utilisateurConnecte) {
+    // ✅ Récupérer tous les paramètres du pressing de l'utilisateur connecté
+    public List<ParametreDto> getAllParametres() {
+        Utilisateur utilisateurConnecte = getUtilisateurConnecte();
         Long pressingId = utilisateurConnecte.getPressing().getId();
 
         return parametreRepository.findAllByPressingId(pressingId)
@@ -95,5 +111,4 @@ public class ParametreService {
                 .map(this::toDto)
                 .collect(Collectors.toList());
     }
-
 }
