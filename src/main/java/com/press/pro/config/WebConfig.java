@@ -8,17 +8,15 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    // 🌍 Autoriser les requêtes depuis le frontend (Angular sur port 3000)
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**") // toutes les routes
-                .allowedOrigins("http://localhost:8080")
+        registry.addMapping("/**")
+                .allowedOrigins("http://localhost:8080") // ✅ ton frontend tourne ici
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true);
     }
 
-    // ⚙️ Gérer les fichiers statiques et Swagger UI
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         // Fichiers statiques

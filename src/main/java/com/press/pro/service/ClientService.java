@@ -3,7 +3,6 @@ package com.press.pro.service;
 import com.press.pro.Dto.ClientDto;
 import com.press.pro.Entity.Client;
 import com.press.pro.Entity.Utilisateur;
-import com.press.pro.enums.StatutClient;
 import com.press.pro.repository.ClientRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -29,6 +28,7 @@ public class ClientService {
         return dto;
     }
 
+    // 🔹 Convertir ClientDto → Client
     private Client toEntity(ClientDto dto) {
         Client client = new Client();
         client.setNom(dto.getNom());
@@ -36,20 +36,6 @@ public class ClientService {
         client.setAdresse(dto.getAdresse());
         return client;
     }
-
-
-//    // 🔹 Convertir ClientDto → Client
-//    private Client toEntity(ClientDto dto) {
-//        Client client = new Client();
-//        client.setNom(dto.getNom());
-//        client.setTelephone(dto.getTelephone());
-//        client.setAdresse(dto.getAdresse());
-//        client.setDate(dto.getDate() != null ? dto.getDate() : java.time.LocalDateTime.now());
-//
-//        // Par défaut, statut = Actif à la création
-//        client.setStatutClient(dto.getStatutClient() != null ? dto.getStatutClient() : StatutClient.Actif);
-//        return client;
-//    }
 
     // ✅ Créer un client
     public ClientDto createClient(ClientDto clientDto, Utilisateur utilisateurConnecte) {
@@ -61,17 +47,20 @@ public class ClientService {
 
     // ✅ Lister les clients du pressing connecté
     public List<ClientDto> getClients(Utilisateur utilisateurConnecte) {
-        return clientRepository.findByPressing(utilisateurConnecte.getPressing())
+        Long pressingId = utilisateurConnecte.getPressing().getId();
+        return clientRepository.findAllByPressing(utilisateurConnecte.getPressing())
                 .stream()
+                .filter(c -> c.getPressing().getId().equals(pressingId))
                 .map(this::toDto)
                 .collect(Collectors.toList());
     }
 
     // ✅ Récupérer un client par ID
     public ClientDto getClientById(Long id, Utilisateur utilisateurConnecte) {
-        Client client = clientRepository.findById(id)
+        Client client = clientRepository.findDistinctByIdWithPressing(id)
                 .orElseThrow(() -> new RuntimeException("Client non trouvé"));
-        if (!client.getPressing().equals(utilisateurConnecte.getPressing())) {
+
+        if (!client.getPressing().getId().equals(utilisateurConnecte.getPressing().getId())) {
             throw new RuntimeException("Accès refusé : client d'un autre pressing");
         }
         return toDto(client);
@@ -79,18 +68,16 @@ public class ClientService {
 
     // ✅ Mettre à jour un client
     public ClientDto updateClient(Long id, ClientDto updatedDto, Utilisateur utilisateurConnecte) {
-        Client client = clientRepository.findById(id)
+        Client client = clientRepository.findDistinctByIdWithPressing(id)
                 .orElseThrow(() -> new RuntimeException("Client non trouvé"));
 
-        if (!client.getPressing().equals(utilisateurConnecte.getPressing())) {
+        if (!client.getPressing().getId().equals(utilisateurConnecte.getPressing().getId())) {
             throw new RuntimeException("Accès refusé : client d'un autre pressing");
         }
 
         client.setNom(updatedDto.getNom());
         client.setTelephone(updatedDto.getTelephone());
         client.setAdresse(updatedDto.getAdresse());
-
-        // Facultatif : si le statut est modifiable
         if (updatedDto.getStatutClient() != null) {
             client.setStatutClient(updatedDto.getStatutClient());
         }
@@ -101,11 +88,13 @@ public class ClientService {
 
     // ✅ Supprimer un client
     public void deleteClient(Long id, Utilisateur utilisateurConnecte) {
-        Client client = clientRepository.findById(id)
+        Client client = clientRepository.findDistinctByIdWithPressing(id)
                 .orElseThrow(() -> new RuntimeException("Client non trouvé"));
-        if (!client.getPressing().equals(utilisateurConnecte.getPressing())) {
+
+        if (!client.getPressing().getId().equals(utilisateurConnecte.getPressing().getId())) {
             throw new RuntimeException("Accès refusé : client d'un autre pressing");
         }
+
         clientRepository.delete(client);
     }
 }
