@@ -38,271 +38,113 @@ public class CommandeService {
     @Autowired
     private CommandePdfService commandePdfService;
 
-
-
-    // 🔹 Nouvelle méthode : crée la commande ET renvoie le PDF à télécharger
-    public ResponseEntity<byte[]> saveCommandeEtTelechargerPdf(CommandeDTO commandeDTO) {
-        // 1️⃣ Création normale de la commande
-        Commande commande = fromDto(commandeDTO);
-
-        if (commandeDTO.getClientId() == null) {
-            throw new RuntimeException("Le client est obligatoire pour créer une commande");
-        }
-
-        // --- récupération de l’utilisateur connecté
-        String emailConnecte = Optional.ofNullable(SecurityContextHolder.getContext().getAuthentication())
+    // 🔹 Méthode utilitaire pour récupérer l'utilisateur connecté avec pressing
+    private Utilisateur getUserConnecte() {
+        String email = Optional.ofNullable(SecurityContextHolder.getContext().getAuthentication())
                 .map(auth -> auth.getName())
                 .orElseThrow(() -> new RuntimeException("Aucun utilisateur connecté !"));
 
-        Utilisateur userConnecte = utilisateurRepository
-                .findDistinctByEmailWithPressing(emailConnecte.toLowerCase().trim())
-                .orElseThrow(() -> new RuntimeException("Utilisateur connecté introuvable : " + emailConnecte));
+        Utilisateur user = utilisateurRepository.findDistinctByEmailWithPressing(email.toLowerCase().trim())
+                .orElseThrow(() -> new RuntimeException("Utilisateur connecté introuvable : " + email));
 
-        if (userConnecte.getPressing() == null)
+        if (user.getPressing() == null)
             throw new RuntimeException("Aucun pressing associé à cet utilisateur !");
 
-        commande.setPressing(userConnecte.getPressing());
-
-        // --- association du client
-        Client client = clientRepository.findById(commandeDTO.getClientId())
-                .orElseThrow(() -> new RuntimeException("Client introuvable avec l'ID : " + commandeDTO.getClientId()));
-        commande.setClient(client);
-
-        // --- association du paramètre
-        if (commandeDTO.getParametreId() != null) {
-            Parametre parametre = parametreRepository.findById(commandeDTO.getParametreId())
-                    .orElseThrow(() -> new RuntimeException("Paramètre introuvable avec l'ID : " + commandeDTO.getParametreId()));
-            commande.setParametre(parametre);
-            double montantBrutCalcule = parametre.getPrix() * commande.getQte();
-            commande.setMontantBrut(montantBrutCalcule);
-        } else {
-            commande.setMontantBrut(0.0);
-        }
-
-        // --- calcul montant net
-        double remise = commandeDTO.getRemise() != null ? commandeDTO.getRemise() : 0.0;
-        commande.setRemise(remise);
-        commande.setMontantNet(commande.getMontantBrut() - remise);
-
-        // --- gestion des dates
-        LocalDate dateReception = Optional.ofNullable(commandeDTO.getDateReception()).orElse(LocalDate.now());
-        commande.setDateReception(dateReception);
-        LocalDate dateLivraison = commandeDTO.isExpress()
-                ? dateReception.plusDays(1)
-                : dateReception.plusDays(3);
-        commande.setDateLivraison(dateLivraison);
-        commande.setExpress(commandeDTO.isExpress());
-        commande.setStatut(StatutCommande.EN_COURS);
-
-        // --- sauvegarde
-        Commande saved = commandeRepository.save(commande);
-
-        // 2️⃣ Génération du PDF en mémoire
-        byte[] pdfBytes = commandePdfService.genererCommandePdf(saved);
-
-        // 3️⃣ Retour de la réponse téléchargeable
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=commande_" + saved.getId() + ".pdf")
-                .contentType(MediaType.APPLICATION_PDF)
-                .body(pdfBytes);
+        return user;
     }
 
-    // Création d'une commande avec génération automatique du PDF
-    public CommandeDTO saveCommande(CommandeDTO commandeDTO) {
+    // 🔹 Création ou sauvegarde d'une commande
+    public CommandeDTO saveCommande(CommandeDTO dto) {
+        if (dto.getClientId() == null) throw new RuntimeException("Le client est obligatoire");
 
-        if (commandeDTO.getClientId() == null) {
-            throw new RuntimeException("Le client est obligatoire pour créer une commande");
-        }
+        Utilisateur user = getUserConnecte();
+        Commande commande = fromDto(dto);
+        commande.setPressing(user.getPressing());
 
-        Commande commande = fromDto(commandeDTO);
-
-        // Récupération utilisateur connecté
-        String emailConnecte = Optional.ofNullable(SecurityContextHolder.getContext().getAuthentication())
-                .map(auth -> auth.getName())
-                .orElseThrow(() -> new RuntimeException("Aucun utilisateur connecté !"));
-
-        Utilisateur userConnecte = utilisateurRepository
-                .findDistinctByEmailWithPressing(emailConnecte.toLowerCase().trim())
-                .orElseThrow(() -> new RuntimeException("Utilisateur connecté introuvable : " + emailConnecte));
-
-        if (userConnecte.getPressing() == null)
-            throw new RuntimeException("Aucun pressing associé à cet utilisateur !");
-
-        commande.setPressing(userConnecte.getPressing());
-
-        // Client obligatoire
-        Client client = clientRepository.findById(commandeDTO.getClientId())
-                .orElseThrow(() -> new RuntimeException("Client introuvable avec l'ID : " + commandeDTO.getClientId()));
+        Client client = clientRepository.findById(dto.getClientId())
+                .orElseThrow(() -> new RuntimeException("Client introuvable : " + dto.getClientId()));
         commande.setClient(client);
 
-        // Paramètre pour calcul du montant
-        if (commandeDTO.getParametreId() != null) {
-            Parametre parametre = parametreRepository.findById(commandeDTO.getParametreId())
-                    .orElseThrow(() -> new RuntimeException("Paramètre introuvable avec l'ID : " + commandeDTO.getParametreId()));
-            commande.setParametre(parametre);
-            double montantBrutCalcule = parametre.getPrix() * commande.getQte();
-            commande.setMontantBrut(montantBrutCalcule);
-        } else {
-            commande.setMontantBrut(0.0);
-        }
-
-        // Remise et montant net
-        double remise = commandeDTO.getRemise() != null ? commandeDTO.getRemise() : 0.0;
-        commande.setRemise(remise);
-        commande.setMontantNet(commande.getMontantBrut() - remise);
-
-        // Dates
-        LocalDate dateReception = Optional.ofNullable(commandeDTO.getDateReception()).orElse(LocalDate.now());
-        commande.setDateReception(dateReception);
-        LocalDate dateLivraison = commandeDTO.isExpress()
-                ? dateReception.plusDays(1)
-                : dateReception.plusDays(3);
-        commande.setDateLivraison(dateLivraison);
-        commande.setExpress(commandeDTO.isExpress());
-
-        // Statut
+        applyParametreEtMontant(commande, dto.getParametreId());
+        applyRemiseEtNet(commande, dto.getRemise());
+        applyDates(commande, dto.isExpress(), dto.getDateReception());
         commande.setStatut(StatutCommande.EN_COURS);
 
-        // Sauvegarde de la commande
         Commande saved = commandeRepository.save(commande);
-
-        // Génération automatique du PDF
-        commandePdfService.genererCommandePdf(saved);
-
-        // Conversion en DTO
+        commandePdfService.genererCommandePdf(saved); // Génération automatique PDF
         return toDto(saved);
     }
 
-    // Méthode pour convertir DTO -> Entity
-    private Commande fromDto(CommandeDTO dto) {
-        Commande commande = new Commande();
-        commande.setQte(dto.getQte() != null ? dto.getQte() : 1);
-        commande.setExpress(dto.isExpress());
-        commande.setDateReception(dto.getDateReception());
-        return commande;
+    // 🔹 Création et retour PDF pour téléchargement
+    public ResponseEntity<byte[]> saveCommandeEtTelechargerPdf(CommandeDTO dto) {
+        CommandeDTO savedDto = saveCommande(dto);
+        Commande commande = commandeRepository.findById(savedDto.getId())
+                .orElseThrow(() -> new RuntimeException("Commande introuvable : " + savedDto.getId()));
+        byte[] pdf = commandePdfService.genererCommandePdf(commande);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=commande_" + commande.getId() + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
     }
 
-    // Méthode pour convertir Entity -> DTO
-    public CommandeDTO toDto(Commande commande) {
-        CommandeDTO dto = new CommandeDTO();
-        dto.setId(commande.getId());
-
-        if (commande.getClient() != null) {
-            dto.setClientId(commande.getClient().getId());
-            dto.setClientNom(commande.getClient().getNom());
-            dto.setClientTelephone(commande.getClient().getTelephone());
-        }
-
-        if (commande.getParametre() != null) {
-            Parametre p = commande.getParametre();
-            dto.setParametreId(p.getId());
-            dto.setArticle(p.getArticle());
-            dto.setService(p.getService());
-            dto.setPrix(p.getPrix());
-        }
-
-        dto.setQte(commande.getQte());
-        dto.setMontantBrut(commande.getMontantBrut());
-        dto.setRemise(commande.getRemise());
-        dto.setMontantNet(commande.getMontantNet());
-        dto.setExpress(commande.isExpress());
-        dto.setDateReception(commande.getDateReception());
-        dto.setDateLivraison(commande.getDateLivraison());
-        dto.setStatut(commande.getStatut());
-
-        return dto;
-    }
-
-
-    public List<CommandeDTO> getAllCommandes() {
-        String emailConnecte = Optional.ofNullable(SecurityContextHolder.getContext().getAuthentication())
-                .map(auth -> auth.getName())
-                .orElseThrow(() -> new RuntimeException("Aucun utilisateur connecté !"));
-
-        Utilisateur userConnecte = utilisateurRepository
-                .findDistinctByEmailWithPressing(emailConnecte.toLowerCase().trim())
-                .orElseThrow(() -> new RuntimeException("Utilisateur introuvable : " + emailConnecte));
-
-        if (userConnecte.getPressing() == null) {
-            throw new RuntimeException("Aucun pressing associé à l'utilisateur connecté !");
-        }
-
-        List<Commande> commandes = commandeRepository.findAllByPressing(userConnecte.getPressing());
-        return commandes.stream().map(this::toDto).toList();
-    }
-
+    // 🔹 Mise à jour d'une commande
     public CommandeDTO updateCommande(Long id, CommandeDTO dto) {
-        String emailConnecte = Optional.ofNullable(SecurityContextHolder.getContext().getAuthentication())
-                .map(auth -> auth.getName())
-                .orElseThrow(() -> new RuntimeException("Aucun utilisateur connecté !"));
-
-        Utilisateur userConnecte = utilisateurRepository
-                .findDistinctByEmailWithPressing(emailConnecte.toLowerCase().trim())
-                .orElseThrow(() -> new RuntimeException("Utilisateur introuvable : " + emailConnecte));
-
-        if (userConnecte.getPressing() == null) {
-            throw new RuntimeException("Aucun pressing associé à cet utilisateur !");
-        }
+        Utilisateur user = getUserConnecte();
 
         Commande commande = commandeRepository.findDistinctByIdWithPressing(id)
                 .orElseThrow(() -> new RuntimeException("Commande introuvable : " + id));
 
-        if (!commande.getPressing().getId().equals(userConnecte.getPressing().getId())) {
+        if (!commande.getPressing().getId().equals(user.getPressing().getId()))
             throw new RuntimeException("Accès refusé : cette commande appartient à un autre pressing");
-        }
 
-        if (dto.getQte() != null) {
-            commande.setQte(dto.getQte());
-        }
+        if (dto.getQte() != null) commande.setQte(dto.getQte());
+        if (dto.getParametreId() != null) applyParametreEtMontant(commande, dto.getParametreId());
 
-        if (dto.getParametreId() != null) {
-            Parametre param = parametreRepository.findById(dto.getParametreId())
-                    .orElseThrow(() -> new RuntimeException("Paramètre introuvable : " + dto.getParametreId()));
-            commande.setParametre(param);
-            commande.setMontantBrut(param.getPrix() * commande.getQte());
-        }
+        applyRemiseEtNet(commande, dto.getRemise() != null ? dto.getRemise() : commande.getRemise());
 
-        double remise = dto.getRemise() != null ? dto.getRemise() : commande.getRemise();
-        commande.setRemise(remise);
-        commande.setMontantNet(commande.getMontantBrut() - remise);
+        if (dto.getDateReception() != null) commande.setDateReception(dto.getDateReception());
 
-        if (dto.getDateReception() != null) {
-            commande.setDateReception(dto.getDateReception());
-        }
+        if (dto.isExpress() != commande.isExpress())
+            applyDates(commande, dto.isExpress(), commande.getDateReception());
 
-        if (dto.isExpress() != commande.isExpress()) {
-            commande.setExpress(dto.isExpress());
-            commande.setDateLivraison(
-                    dto.isExpress()
-                            ? commande.getDateReception().plusDays(1)
-                            : commande.getDateReception().plusDays(3)
-            );
-        }
+        if (dto.getStatut() != null) commande.setStatut(dto.getStatut());
 
-        if (dto.getStatut() != null) {
-            commande.setStatut(dto.getStatut());
-        }
-
-        Commande saved = commandeRepository.save(commande);
-        return toDto(saved);
+        return toDto(commandeRepository.save(commande));
     }
 
-    // 🔹 1. Total des commandes par jour
+    // 🔹 Récupérer toutes les commandes du pressing connecté
+    public List<CommandeDTO> getAllCommandes() {
+        Utilisateur user = getUserConnecte();
+        return commandeRepository.findAllByPressing(user.getPressing())
+                .stream().map(this::toDto).toList();
+    }
+
+    // 🔹 Génération PDF pour commande existante
+    public ResponseEntity<byte[]> telechargerCommandePdf(Long id) {
+        Commande commande = commandeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Commande introuvable : " + id));
+
+        byte[] pdf = commandePdfService.genererCommandePdf(commande);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=commande_" + id + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
+
+    // 🔹 Statistiques journalières
     public List<Map<String, Object>> getTotalCommandesParJour() {
         return mapToList(commandeRepository.countCommandesByDay());
     }
 
-    // 🔹 2. Commandes EN_COURS par jour
     public List<Map<String, Object>> getCommandesEnCoursParJour() {
         return mapToList(commandeRepository.countCommandesByStatutAndDay(StatutCommande.EN_COURS));
     }
 
-    // 🔹 3. Commandes LIVREE par jour
     public List<Map<String, Object>> getCommandesLivreesParJour() {
         return mapToList(commandeRepository.countCommandesByStatutAndDay(StatutCommande.LIVREE));
     }
 
-    // 🔧 utilitaire pour formater les données
     private List<Map<String, Object>> mapToList(List<Object[]> data) {
         List<Map<String, Object>> list = new ArrayList<>();
         for (Object[] obj : data) {
@@ -312,5 +154,60 @@ public class CommandeService {
             list.add(map);
         }
         return list;
+    }
+
+    // 🔹 Conversion DTO -> Entity
+    private Commande fromDto(CommandeDTO dto) {
+        Commande c = new Commande();
+        c.setQte(dto.getQte() != null ? dto.getQte() : 1);
+        c.setExpress(dto.isExpress());
+        c.setDateReception(dto.getDateReception());
+        return c;
+    }
+
+    // 🔹 Conversion Entity -> DTO
+    public CommandeDTO toDto(Commande c) {
+        CommandeDTO dto = new CommandeDTO();
+        dto.setId(c.getId());
+        if (c.getClient() != null) {
+            dto.setClientId(c.getClient().getId());
+            dto.setClientNom(c.getClient().getNom());
+            dto.setClientTelephone(c.getClient().getTelephone());
+        }
+        if (c.getParametre() != null) {
+            dto.setParametreId(c.getParametre().getId());
+            dto.setArticle(c.getParametre().getArticle());
+            dto.setService(c.getParametre().getService());
+            dto.setPrix(c.getParametre().getPrix());
+        }
+        dto.setQte(c.getQte());
+        dto.setMontantBrut(c.getMontantBrut());
+        dto.setRemise(c.getRemise());
+        dto.setMontantNet(c.getMontantNet());
+        dto.setExpress(c.isExpress());
+        dto.setDateReception(c.getDateReception());
+        dto.setDateLivraison(c.getDateLivraison());
+        dto.setStatut(c.getStatut());
+        return dto;
+    }
+
+    // 🔹 Méthodes auxiliaires pour simplifier logique
+    private void applyParametreEtMontant(Commande c, Long parametreId) {
+        Parametre param = parametreRepository.findById(parametreId)
+                .orElseThrow(() -> new RuntimeException("Paramètre introuvable : " + parametreId));
+        c.setParametre(param);
+        c.setMontantBrut(param.getPrix() * c.getQte());
+    }
+
+    private void applyRemiseEtNet(Commande c, Double remise) {
+        c.setRemise(remise != null ? remise : 0.0);
+        c.setMontantNet(c.getMontantBrut() - c.getRemise());
+    }
+
+    private void applyDates(Commande c, boolean express, LocalDate dateReception) {
+        LocalDate reception = dateReception != null ? dateReception : LocalDate.now();
+        c.setDateReception(reception);
+        c.setExpress(express);
+        c.setDateLivraison(express ? reception.plusDays(1) : reception.plusDays(3));
     }
 }
