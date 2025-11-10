@@ -2,9 +2,9 @@ package com.press.pro.Dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.press.pro.enums.StatutCommande;
+import com.press.pro.enums.StatutPaiement;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 public class CommandeDTO {
 
@@ -21,13 +21,18 @@ public class CommandeDTO {
     private String service;
     private Double prix;
 
-    // Changement de int -> Integer et double -> Double pour permettre null
+    // Quantité et montants
     private Integer qte;
     private Double montantBrut;
     private Double remise;
     private Double montantNet;
-    private boolean express;
 
+    // Montants payés et reste à payer
+    private Double montantPaye;    // montant déjà versé
+    private Double resteAPayer;    // calculé = montantNet - montantPaye
+
+    // Express / dates
+    private boolean express;
 
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate dateReception;
@@ -35,12 +40,11 @@ public class CommandeDTO {
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate dateLivraison;
 
-
-
+    // Statuts
     private StatutCommande statut;
+    private StatutPaiement statutPaiement;
 
-    // Getters et Setters
-
+    // ----------------- Getters / Setters -----------------
 
     public Long getId() {
         return id;
@@ -138,6 +142,22 @@ public class CommandeDTO {
         this.montantNet = montantNet;
     }
 
+    public Double getMontantPaye() {
+        return montantPaye;
+    }
+
+    public void setMontantPaye(Double montantPaye) {
+        this.montantPaye = montantPaye;
+    }
+
+    public Double getResteAPayer() {
+        return resteAPayer;
+    }
+
+    public void setResteAPayer(Double resteAPayer) {
+        this.resteAPayer = resteAPayer;
+    }
+
     public boolean isExpress() {
         return express;
     }
@@ -168,5 +188,13 @@ public class CommandeDTO {
 
     public void setStatut(StatutCommande statut) {
         this.statut = statut;
+    }
+
+    public StatutPaiement getStatutPaiement() {
+        return statutPaiement;
+    }
+
+    public void setStatutPaiement(StatutPaiement statutPaiement) {
+        this.statutPaiement = statutPaiement;
     }
 }

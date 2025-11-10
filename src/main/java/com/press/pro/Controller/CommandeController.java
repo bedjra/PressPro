@@ -54,49 +54,19 @@ public class CommandeController {
     }
 
 
-    // 1️⃣ Toutes les commandes par jour
     @GetMapping("/total")
     public List<Map<String, Object>> getTotalCommandesParJour() {
         return commandeService.getTotalCommandesParJour();
     }
 
-    // 2️⃣ Commandes EN_COURS par jour
     @GetMapping("/cours")
     public List<Map<String, Object>> getCommandesEnCoursParJour() {
         return commandeService.getCommandesEnCoursParJour();
     }
 
-    // 3️⃣ Commandes LIVREE par jour
     @GetMapping("/livree")
     public List<Map<String, Object>> getCommandesLivreesParJour() {
         return commandeService.getCommandesLivreesParJour();
     }
-
-    // 🔹 2️⃣ Télécharger un PDF existant à partir de l'ID de la commande
-//    @GetMapping("/commande/pdf/last/{idCommande}")
-//    public ResponseEntity<Resource> getLastPdf(@PathVariable Long idCommande) throws IOException {
-//        Path dossier = Paths.get(DOSSIER_COMMANDES);
-//        if (!Files.exists(dossier)) {
-//            return ResponseEntity.notFound().build();
-//        }
-//
-//        // Filtrer les fichiers qui correspondent à la commande
-//        Optional<Path> dernierPdf = Files.list(dossier)
-//                .filter(f -> f.getFileName().toString().startsWith("Commande_" + idCommande))
-//                .max(Comparator.comparingLong(f -> f.toFile().lastModified())); // le plus récent
-//
-//        if (dernierPdf.isEmpty()) {
-//            return ResponseEntity.notFound().build();
-//        }
-//
-//        Path fichier = dernierPdf.get();
-//        Resource resource = new UrlResource(fichier.toUri());
-//
-//        return ResponseEntity.ok()
-//                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fichier.getFileName() + "\"")
-//                .contentType(MediaType.APPLICATION_PDF)
-//                .body(resource);
-//    }
-
 
 }
