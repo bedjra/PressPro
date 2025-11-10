@@ -1,7 +1,10 @@
 package com.press.pro.Entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.press.pro.enums.StatutCommande;
 import jakarta.persistence.*;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -12,7 +15,6 @@ public class Commande {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 🔗 Relations
     @ManyToOne
     @JoinColumn(name = "client_id", nullable = false)
     private Client client;
@@ -21,51 +23,44 @@ public class Commande {
     @JoinColumn(name = "parametre_id", nullable = false)
     private Parametre parametre;
 
-    // 🔹 Champs principaux
-    private int qte;
-
-    // 🔹 Dates
-    private LocalDateTime date;
-    private LocalDateTime dateLivraison;
-    private LocalDateTime dateLivraisonExpress;
-
-    // 🔹 Mode express
-    private boolean express = false;
-    private Double prixExpress; // Supplément
-    private Double remise;      // En %
-
-    // 🔹 Statut
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private StatutCommande statutCommande = StatutCommande.EN_COURS;
-
     @ManyToOne
-    @JoinColumn(name = "pressing_id")
+    @JoinColumn(name = "pressing_id", nullable = false)
     private Pressing pressing;
 
-    // --- Logique automatique à la création ---
+    private int qte;
+
+    private double montantBrut;
+    private double remise;
+    private double montantNet;
+
+    @Enumerated(EnumType.STRING)
+    private StatutCommande statut;
+
+
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate dateReception;
+
+
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate dateLivraison;
+
+    // 🧠 Nouveau champ
+    @Column(nullable = false)
+    private boolean express = false; // valeur par défaut
+
     @PrePersist
-    protected void onCreate() {
-        this.date = LocalDateTime.now();
-
-        // ⏰ Livraison selon type
-        if (this.express) {
-            this.dateLivraisonExpress = this.date.plusHours(24);
-            this.dateLivraison = this.dateLivraisonExpress;
+    public void calculerDateLivraison() {
+        if (dateReception == null) {
+            dateReception = LocalDate.now();
+        }
+        if (express) {
+            dateLivraison = dateReception.plusDays(1);
         } else {
-            this.dateLivraison = this.date.plusHours(72);
-        }
-
-        // Valeurs par défaut
-        if (this.statutCommande == null) {
-            this.statutCommande = StatutCommande.EN_COURS;
-        }
-        if (this.remise == null) {
-            this.remise = 0.0;
+            dateLivraison = dateReception.plusDays(3);
         }
     }
 
-    // --- Getters & Setters ---
+    // Getters et Setters
 
 
     public Long getId() {
@@ -92,6 +87,14 @@ public class Commande {
         this.parametre = parametre;
     }
 
+    public Pressing getPressing() {
+        return pressing;
+    }
+
+    public void setPressing(Pressing pressing) {
+        this.pressing = pressing;
+    }
+
     public int getQte() {
         return qte;
     }
@@ -100,30 +103,52 @@ public class Commande {
         this.qte = qte;
     }
 
-
-
-    public LocalDateTime getDate() {
-        return date;
+    public double getMontantBrut() {
+        return montantBrut;
     }
 
-    public void setDate(LocalDateTime date) {
-        this.date = date;
+    public void setMontantBrut(double montantBrut) {
+        this.montantBrut = montantBrut;
     }
 
-    public LocalDateTime getDateLivraison() {
+    public double getRemise() {
+        return remise;
+    }
+
+    public void setRemise(double remise) {
+        this.remise = remise;
+    }
+
+    public double getMontantNet() {
+        return montantNet;
+    }
+
+    public void setMontantNet(double montantNet) {
+        this.montantNet = montantNet;
+    }
+
+    public StatutCommande getStatut() {
+        return statut;
+    }
+
+    public void setStatut(StatutCommande statut) {
+        this.statut = statut;
+    }
+
+    public LocalDate getDateReception() {
+        return dateReception;
+    }
+
+    public void setDateReception(LocalDate dateReception) {
+        this.dateReception = dateReception;
+    }
+
+    public LocalDate getDateLivraison() {
         return dateLivraison;
     }
 
-    public void setDateLivraison(LocalDateTime dateLivraison) {
+    public void setDateLivraison(LocalDate dateLivraison) {
         this.dateLivraison = dateLivraison;
-    }
-
-    public LocalDateTime getDateLivraisonExpress() {
-        return dateLivraisonExpress;
-    }
-
-    public void setDateLivraisonExpress(LocalDateTime dateLivraisonExpress) {
-        this.dateLivraisonExpress = dateLivraisonExpress;
     }
 
     public boolean isExpress() {
@@ -132,37 +157,5 @@ public class Commande {
 
     public void setExpress(boolean express) {
         this.express = express;
-    }
-
-    public Double getPrixExpress() {
-        return prixExpress;
-    }
-
-    public void setPrixExpress(Double prixExpress) {
-        this.prixExpress = prixExpress;
-    }
-
-    public Double getRemise() {
-        return remise;
-    }
-
-    public void setRemise(Double remise) {
-        this.remise = remise;
-    }
-
-    public StatutCommande getStatutCommande() {
-        return statutCommande;
-    }
-
-    public void setStatutCommande(StatutCommande statutCommande) {
-        this.statutCommande = statutCommande;
-    }
-
-    public Pressing getPressing() {
-        return pressing;
-    }
-
-    public void setPressing(Pressing pressing) {
-        this.pressing = pressing;
     }
 }

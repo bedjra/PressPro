@@ -1,51 +1,61 @@
 package com.press.pro.Controller;
 
-import com.press.pro.Entity.Commande;
+import com.press.pro.Dto.CommandeDTO;
 import com.press.pro.service.CommandeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 @RestController
-@RequestMapping("/api/commandes")
+@RequestMapping("/api/commande")
 public class CommandeController {
 
     @Autowired
     private CommandeService commandeService;
 
-    // --- Création d'une commande ---
-    @PostMapping("/create")
-    public ResponseEntity<Commande> createCommande(@RequestBody Commande commande) {
-        try {
-            Commande savedCommande = commandeService.createCommande(commande);
-            return ResponseEntity.ok(savedCommande);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(null);
-        }
+
+    @PostMapping
+    public CommandeDTO saveCommande(@RequestBody CommandeDTO commandeDTO) {
+        return commandeService.saveCommande(commandeDTO);
     }
 
-    // --- Mise à jour d'une commande ---
-    @PutMapping("/update/{id}")
-    public ResponseEntity<Commande> updateCommande(
-            @PathVariable Long id,
-            @RequestBody Commande updatedCommande
-    ) {
-        try {
-            Commande savedCommande = commandeService.updateCommande(id, updatedCommande);
-            return ResponseEntity.ok(savedCommande);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(null);
-        }
+    @PostMapping("/pdf")
+    public ResponseEntity<byte[]> createCommandeAvecPdf(@RequestBody CommandeDTO dto) {
+        return commandeService.saveCommandeEtTelechargerPdf(dto);
     }
 
-    // --- Optionnel : GET d'une commande par ID ---
-    @GetMapping("/{id}")
-    public ResponseEntity<Commande> getCommande(@PathVariable Long id) {
-        try {
-            Commande commande = commandeService.updateCommande(id, null); // ou créer un getCommande dans le service
-            return ResponseEntity.ok(commande);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+
+    @GetMapping
+    public List<CommandeDTO> getAllCommandes() {
+        return commandeService.getAllCommandes();
+    }
+
+
+    @PutMapping("/{id}")
+    public CommandeDTO updateCommande(@PathVariable Long id, @RequestBody CommandeDTO commandeDTO) {
+        return commandeService.updateCommande(id, commandeDTO);
+    }
+
+
+    // 1️⃣ Toutes les commandes par jour
+    @GetMapping("/total")
+    public List<Map<String, Object>> getTotalCommandesParJour() {
+        return commandeService.getTotalCommandesParJour();
+    }
+
+    // 2️⃣ Commandes EN_COURS par jour
+    @GetMapping("/cours")
+    public List<Map<String, Object>> getCommandesEnCoursParJour() {
+        return commandeService.getCommandesEnCoursParJour();
+    }
+
+    // 3️⃣ Commandes LIVREE par jour
+    @GetMapping("/livree")
+    public List<Map<String, Object>> getCommandesLivreesParJour() {
+        return commandeService.getCommandesLivreesParJour();
     }
 }

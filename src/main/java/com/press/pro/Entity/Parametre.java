@@ -69,4 +69,6 @@ public class Parametre {
     public void setPressing(Pressing pressing) {
         this.pressing = pressing;
     }
+
+
 }

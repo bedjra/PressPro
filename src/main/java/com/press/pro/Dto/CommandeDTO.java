@@ -1,114 +1,172 @@
 package com.press.pro.Dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.press.pro.enums.StatutCommande;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public class CommandeDTO {
 
     private Long id;
 
-    // 🔗 Références aux entités
+    // Client simplifié : nom, téléphone et ID pour liaison
     private Long clientId;
-    private Long parametreId;
+    private String clientNom;
+    private String clientTelephone;
 
-    // 🔹 Infos client et service
-    private String nom;
-    private String telephone;
+    // Paramètre complet + ID pour liaison
+    private Long parametreId;
     private String article;
     private String service;
+    private Double prix;
 
-    // 🔹 Montants et quantité
-    private double prix;          // Prix unitaire
-    private int qte;              // Quantité
-    private boolean express;      // Mode de commande
-    private Double prixExpress;   // Supplément express
-    private Double remise;        // Remise en %
-    private LocalDateTime dateLivraisonExpress;
+    // Changement de int -> Integer et double -> Double pour permettre null
+    private Integer qte;
+    private Double montantBrut;
+    private Double remise;
+    private Double montantNet;
+    private boolean express;
 
-    // 🔹 Dates
-    private LocalDateTime date;            // Date de commande
-    private LocalDateTime dateLivraison;   // Livraison prévue
 
-    // 🔹 Statut
-    private StatutCommande statutCommande; // EN_COURS, PAYEE, LIVREE
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate dateReception;
 
-    // --- Constructeurs ---
-    public CommandeDTO() {}
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate dateLivraison;
 
-    public CommandeDTO(Long clientId, Long parametreId, String nom, String telephone,
-                       String article, String service, double prix, int qte,
-                       boolean express, Double prixExpress, Double remise,
-                       LocalDateTime date, LocalDateTime dateLivraison,
-                       StatutCommande statutCommande) {
+
+
+    private StatutCommande statut;
+
+    // Getters et Setters
+
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Long getClientId() {
+        return clientId;
+    }
+
+    public void setClientId(Long clientId) {
         this.clientId = clientId;
+    }
+
+    public String getClientNom() {
+        return clientNom;
+    }
+
+    public void setClientNom(String clientNom) {
+        this.clientNom = clientNom;
+    }
+
+    public String getClientTelephone() {
+        return clientTelephone;
+    }
+
+    public void setClientTelephone(String clientTelephone) {
+        this.clientTelephone = clientTelephone;
+    }
+
+    public Long getParametreId() {
+        return parametreId;
+    }
+
+    public void setParametreId(Long parametreId) {
         this.parametreId = parametreId;
-        this.nom = nom;
-        this.telephone = telephone;
+    }
+
+    public String getArticle() {
+        return article;
+    }
+
+    public void setArticle(String article) {
         this.article = article;
+    }
+
+    public String getService() {
+        return service;
+    }
+
+    public void setService(String service) {
         this.service = service;
+    }
+
+    public Double getPrix() {
+        return prix;
+    }
+
+    public void setPrix(Double prix) {
         this.prix = prix;
+    }
+
+    public Integer getQte() {
+        return qte;
+    }
+
+    public void setQte(Integer qte) {
         this.qte = qte;
-        this.express = express;
-        this.prixExpress = prixExpress;
+    }
+
+    public Double getMontantBrut() {
+        return montantBrut;
+    }
+
+    public void setMontantBrut(Double montantBrut) {
+        this.montantBrut = montantBrut;
+    }
+
+    public Double getRemise() {
+        return remise;
+    }
+
+    public void setRemise(Double remise) {
         this.remise = remise;
-        this.date = date;
+    }
+
+    public Double getMontantNet() {
+        return montantNet;
+    }
+
+    public void setMontantNet(Double montantNet) {
+        this.montantNet = montantNet;
+    }
+
+    public boolean isExpress() {
+        return express;
+    }
+
+    public void setExpress(boolean express) {
+        this.express = express;
+    }
+
+    public LocalDate getDateReception() {
+        return dateReception;
+    }
+
+    public void setDateReception(LocalDate dateReception) {
+        this.dateReception = dateReception;
+    }
+
+    public LocalDate getDateLivraison() {
+        return dateLivraison;
+    }
+
+    public void setDateLivraison(LocalDate dateLivraison) {
         this.dateLivraison = dateLivraison;
-        this.statutCommande = statutCommande;
     }
 
-    // --- Getters / Setters ---
-
-
-    public LocalDateTime getDateLivraisonExpress() {
-        return dateLivraisonExpress;
+    public StatutCommande getStatut() {
+        return statut;
     }
 
-    public void setDateLivraisonExpress(LocalDateTime dateLivraisonExpress) {
-        this.dateLivraisonExpress = dateLivraisonExpress;
+    public void setStatut(StatutCommande statut) {
+        this.statut = statut;
     }
-
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    public Long getClientId() { return clientId; }
-    public void setClientId(Long clientId) { this.clientId = clientId; }
-
-    public Long getParametreId() { return parametreId; }
-    public void setParametreId(Long parametreId) { this.parametreId = parametreId; }
-
-    public String getNom() { return nom; }
-    public void setNom(String nom) { this.nom = nom; }
-
-    public String getTelephone() { return telephone; }
-    public void setTelephone(String telephone) { this.telephone = telephone; }
-
-    public String getArticle() { return article; }
-    public void setArticle(String article) { this.article = article; }
-
-    public String getService() { return service; }
-    public void setService(String service) { this.service = service; }
-
-    public double getPrix() { return prix; }
-    public void setPrix(double prix) { this.prix = prix; }
-
-    public int getQte() { return qte; }
-    public void setQte(int qte) { this.qte = qte; }
-
-    public boolean isExpress() { return express; }
-    public void setExpress(boolean express) { this.express = express; }
-
-    public Double getPrixExpress() { return prixExpress; }
-    public void setPrixExpress(Double prixExpress) { this.prixExpress = prixExpress; }
-
-    public Double getRemise() { return remise; }
-    public void setRemise(Double remise) { this.remise = remise; }
-
-    public LocalDateTime getDate() { return date; }
-    public void setDate(LocalDateTime date) { this.date = date; }
-
-    public LocalDateTime getDateLivraison() { return dateLivraison; }
-    public void setDateLivraison(LocalDateTime dateLivraison) { this.dateLivraison = dateLivraison; }
-
-    public StatutCommande getStatutCommande() { return statutCommande; }
-    public void setStatutCommande(StatutCommande statutCommande) { this.statutCommande = statutCommande; }
 }
