@@ -5,8 +5,8 @@ import com.press.pro.Entity.Charge;
 import com.press.pro.Entity.Utilisateur;
 import com.press.pro.repository.ChargeRepository;
 import com.press.pro.repository.UtilisateurRepository;
-import org.springframework.stereotype.Service;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
@@ -24,28 +24,26 @@ public class ChargeService {
         this.utilisateurRepository = utilisateurRepository;
     }
 
-    /**
-     * Récupère l'utilisateur connecté et son pressing distinct
-     */
+    // Récupère l'utilisateur connecté
     private Utilisateur getUserConnecte() {
         String email = Optional.ofNullable(SecurityContextHolder.getContext().getAuthentication())
                 .map(auth -> auth.getName())
                 .orElseThrow(() -> new RuntimeException("Aucun utilisateur connecté !"));
 
-        // 🔹 Utilisation de la méthode distinct pour éviter les doublons Hibernate
-        Utilisateur user = utilisateurRepository.findDistinctByEmailWithPressing(email.toLowerCase().trim())
-                .orElseThrow(() -> new RuntimeException("Utilisateur connecté introuvable : " + email));
+        List<Utilisateur> users = utilisateurRepository.findAllByEmail(email.toLowerCase().trim());
 
-        if (user.getPressing() == null) {
+        if (users.isEmpty())
+            throw new RuntimeException("Utilisateur connecté introuvable : " + email);
+
+        Utilisateur user = users.get(0); // prendre le premier si doublons (comme pour les autres KPIs)
+
+        if (user.getPressing() == null)
             throw new RuntimeException("Aucun pressing associé à cet utilisateur !");
-        }
 
         return user;
     }
 
-    /**
-     * Mapping entity -> DTO
-     */
+    // Mapping entity -> DTO
     private ChargeDTO toDTO(Charge charge) {
         return new ChargeDTO(
                 charge.getId(),
@@ -57,9 +55,6 @@ public class ChargeService {
         );
     }
 
-    /**
-     * Création d'une charge
-     */
     public ChargeDTO create(Charge charge) {
         Utilisateur user = getUserConnecte();
         charge.setPressing(user.getPressing());
@@ -67,31 +62,21 @@ public class ChargeService {
         return toDTO(saved);
     }
 
-    /**
-     * Récupère toutes les charges du pressing connecté
-     */
     public List<ChargeDTO> findAll() {
         Utilisateur user = getUserConnecte();
-        return chargeRepository.findAll()
-                .stream()
-                .filter(c -> c.getPressing() != null &&
-                        c.getPressing().getId().equals(user.getPressing().getId()))
+        // On récupère toutes les charges DISTINCT par pressing comme les autres KPIs
+        List<Charge> charges = chargeRepository.findDistinctByPressingId(user.getPressing().getId());
+        return charges.stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Récupère une charge par son id
-     */
     public ChargeDTO findById(Long id) {
         Charge charge = chargeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Charge introuvable avec l'id : " + id));
         return toDTO(charge);
     }
 
-    /**
-     * Mise à jour d'une charge
-     */
     public ChargeDTO update(Long id, Charge updatedCharge) {
         Utilisateur user = getUserConnecte();
 
@@ -105,12 +90,7 @@ public class ChargeService {
         return toDTO(chargeRepository.save(charge));
     }
 
-    /**
-     * Suppression d'une charge
-     */
     public void delete(Long id) {
-        Charge charge = chargeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Charge introuvable avec l'id : " + id));
-        chargeRepository.delete(charge);
+        chargeRepository.deleteById(id);
     }
 }
