@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -48,18 +49,18 @@ public class CommandeController {
         return commandeService.getAllCommandes();
     }
 
+
+
     @GetMapping("/{id}")
     public ResponseEntity<CommandeDTO> getCommandeById(@PathVariable Long id) {
         try {
-            CommandeDTO dto = commandeService.getCommandeById(id);
-            return ResponseEntity.ok(dto);
-        } catch (RuntimeException e) {
-            return ResponseEntity
-                    .status(404)
-                    .body(null); // ou tu peux renvoyer un message d'erreur personnalisé
+            CommandeDTO commandeDTO = commandeService.getCommandeById(id);
+            return ResponseEntity.ok(commandeDTO);
+        } catch (RuntimeException ex) {
+            // On peut renvoyer un 404 si commande introuvable ou accès refusé
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
     }
-
 
 
     @PutMapping("/{id}")

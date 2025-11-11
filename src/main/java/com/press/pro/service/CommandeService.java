@@ -359,21 +359,15 @@ public class CommandeService {
     }
 
 
-    // 🔹 Récupération d'une commande par ID
     public CommandeDTO getCommandeById(Long id) {
-        Utilisateur user = getUserConnecte(); // Récupérer l'utilisateur connecté
+        Utilisateur user = getUserConnecte(); // utilisateur connecté
 
-        Commande commande = commandeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Commande introuvable : " + id));
-
-        // Vérifier que la commande appartient bien au pressing de l'utilisateur
-        if (!commande.getPressing().getId().equals(user.getPressing().getId())) {
-            throw new RuntimeException("Accès refusé : cette commande appartient à un autre pressing");
-        }
+        Commande commande = commandeRepository
+                .findDistinctByIdAndPressingId(id, user.getPressing().getId())
+                .orElseThrow(() -> new RuntimeException("Commande introuvable ou accès refusé : " + id));
 
         return toDto(commande);
     }
-
 
 
 }
