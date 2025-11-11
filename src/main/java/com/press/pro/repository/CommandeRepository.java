@@ -61,5 +61,8 @@ public interface CommandeRepository extends JpaRepository<Commande, Long> {
     boolean existsByClientAndDateReceptionAfter(Client client, LocalDate date);
 
 
+    @Query("SELECT DISTINCT c FROM Commande c WHERE c.id = :id AND c.pressing.id = :pressingId")
+    Optional<Commande> findDistinctByIdAndPressingId(@Param("id") Long id, @Param("pressingId") Long pressingId);
+
 }
 
