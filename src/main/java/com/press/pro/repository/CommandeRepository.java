@@ -3,11 +3,13 @@ package com.press.pro.repository;
 
 import com.press.pro.Entity.Pressing;
 import com.press.pro.enums.StatutCommande;
+import com.press.pro.enums.StatutPaiement;
 import org.springframework.data.jpa.repository.JpaRepository;
 import com.press.pro.Entity.Commande;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -37,4 +39,24 @@ public interface CommandeRepository extends JpaRepository<Commande, Long> {
     List<Object[]> countCommandesByStatutAndDayAndPressing(@Param("statut") StatutCommande statut,
                                                            @Param("pressingId") Long pressingId);
 
+
+    @Query("SELECT SUM(c.montantNet) FROM Commande c WHERE c.dateReception = :date AND c.pressing.id = :pressingId")
+    Optional<Double> sumMontantNetByDateAndPressing(LocalDate date, Long pressingId);
+
+    @Query("SELECT SUM(c.montantNet) FROM Commande c WHERE c.dateReception BETWEEN :start AND :end AND c.pressing.id = :pressingId")
+    Optional<Double> sumMontantNetBetweenDatesAndPressing(LocalDate start, LocalDate end, Long pressingId);
+
+    @Query("""
+    SELECT SUM(c.montantNet - c.montantPaye)
+    FROM Commande c
+    WHERE c.pressing.id = :pressingId
+      AND c.statutPaiement IN :statuts
+""")
+    Optional<Double> sumResteAPayerByPressingAndStatutPaiement(
+            @Param("pressingId") Long pressingId,
+            @Param("statuts") List<StatutPaiement> statuts
+    );
+
+
 }
+

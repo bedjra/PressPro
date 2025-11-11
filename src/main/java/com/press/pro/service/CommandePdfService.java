@@ -23,8 +23,6 @@ public class CommandePdfService {
 
     public byte[] genererCommandePdf(Commande commande) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-
-        // 📄 Format A6 (reçu compact)
         Document document = new Document(PageSize.A6, 25, 25, 25, 25);
 
         try {
@@ -84,11 +82,12 @@ public class CommandePdfService {
             commandeTable.addCell(createCellLeft("Livraison:", fontInfo));
             commandeTable.addCell(createCellLeft(commande.getDateLivraison().format(formatter), fontInfo));
 
-            commandeTable.addCell(createCellLeft("Express:", fontInfo));
-            commandeTable.addCell(createCellLeft(commande.isExpress() ? "Oui" : "Non", fontInfo));
+            // ✅ Ajout du montant payé et du statut de paiement
+            commandeTable.addCell(createCellLeft("Montant payé:", fontInfo));
+            commandeTable.addCell(createCellLeft(String.format("%.0f F", commande.getMontantPaye()), fontInfo));
 
-            commandeTable.addCell(createCellLeft("Statut:", fontInfo));
-            commandeTable.addCell(createCellLeft(String.valueOf(commande.getStatut()), fontInfo));
+            commandeTable.addCell(createCellLeft("Statut paiement:", fontInfo));
+            commandeTable.addCell(createCellLeft(String.valueOf(commande.getStatutPaiement()), fontInfo));
 
             document.add(commandeTable);
 
@@ -178,6 +177,7 @@ public class CommandePdfService {
         return out.toByteArray();
     }
 
+    // === Méthodes utilitaires ===
     private PdfPCell createCellLeft(String text, Font font) {
         PdfPCell cell = new PdfPCell(new Phrase(text, font));
         cell.setBorder(Rectangle.NO_BORDER);

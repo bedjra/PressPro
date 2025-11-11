@@ -1,6 +1,7 @@
 package com.press.pro.Controller;
 
 import com.press.pro.Dto.CommandeDTO;
+import com.press.pro.enums.StatutCommande;
 import com.press.pro.service.CommandeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
@@ -69,4 +70,39 @@ public class CommandeController {
         return commandeService.getCommandesLivreesParJour();
     }
 
+
+
+    @GetMapping("/jour")
+    public Double getCAJournalier() {
+        return commandeService.getCAJournalier();
+    }
+
+    @GetMapping("/hebdo")
+    public Double getCAHebdo() {
+        return commandeService.getCAHebdomadaire();
+    }
+
+    @GetMapping("/mensuel")
+    public Double getCAMensuel() {
+        return commandeService.getCAMensuel();
+    }
+
+    @GetMapping("/annuel")
+    public Double getCAAnnuel() {
+        return commandeService.getCAAnnuel();
+    }
+
+    @GetMapping("/impayes")
+    public Double getTotalImpayes() {
+        return commandeService.getTotalImpayes();
+    }
+
+    // 🔹 Changer le statut d'une commande
+    @PutMapping("/{id}/statut")
+    public CommandeDTO changerStatut(
+            @PathVariable("id") Long commandeId,
+            @RequestParam("statut") StatutCommande statut) {
+
+        return commandeService.updateStatutCommande(commandeId, statut);
+    }
 }

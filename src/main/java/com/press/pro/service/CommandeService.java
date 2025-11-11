@@ -7,10 +7,7 @@ import com.press.pro.Entity.Parametre;
 import com.press.pro.Entity.Utilisateur;
 import com.press.pro.enums.StatutCommande;
 import com.press.pro.enums.StatutPaiement;
-import com.press.pro.repository.ClientRepository;
-import com.press.pro.repository.CommandeRepository;
-import com.press.pro.repository.ParametreRepository;
-import com.press.pro.repository.UtilisateurRepository;
+import com.press.pro.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -18,7 +15,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 
 @Service
@@ -32,6 +31,10 @@ public class CommandeService {
 
     @Autowired
     private ParametreRepository parametreRepository;
+
+    @Autowired
+    private ChargeRepository chargeRepository;
+
 
     @Autowired
     private UtilisateurRepository utilisateurRepository;
@@ -56,8 +59,9 @@ public class CommandeService {
 
     // 🔹 Création / Enregistrement d'une commande
     public CommandeDTO saveCommande(CommandeDTO dto) {
-        if (dto.getClientId() == null)
+        if (dto.getClientId() == null) {
             throw new RuntimeException("Le client est obligatoire");
+        }
 
         // Récupération de l'utilisateur connecté et du pressing associé
         Utilisateur user = getUserConnecte();
@@ -72,24 +76,29 @@ public class CommandeService {
         commande.setClient(client);
 
         // Appliquer les paramètres et calculer les montants
-        applyParametreEtMontant(commande, dto.getParametreId());
+        if (dto.getParametreId() != null) {
+            applyParametreEtMontant(commande, dto.getParametreId());
+        }
+
+        // Appliquer remise et montant net
         applyRemiseEtNet(commande, dto.getRemise());
+
+        // Appliquer les dates (reception + livraison express ou standard)
         applyDates(commande, dto.isExpress(), dto.getDateReception());
 
         // Statut de la commande
         commande.setStatut(StatutCommande.EN_COURS);
 
         // 🧠 Gestion du paiement
-        // Si le montant payé est fourni, on l'applique, sinon 0
         double montantPaye = dto.getMontantPaye() != null ? dto.getMontantPaye() : 0;
-        commande.setMontantPaye(montantPaye); // déclenche automatiquement la mise à jour du statutPaiement
+        commande.setMontantPaye(montantPaye); // met automatiquement à jour le statutPaiement
 
-        // Si le statutPaiement est explicitement fourni, on peut le forcer (optionnel)
+        // Optionnel : forcer le statutPaiement si fourni
         if (dto.getStatutPaiement() != null) {
             commande.setStatutPaiement(dto.getStatutPaiement());
         }
 
-        // Sauvegarde de la commande
+        // Sauvegarde dans la base
         Commande saved = commandeRepository.save(commande);
 
         // Génération PDF automatique
@@ -255,4 +264,100 @@ public class CommandeService {
         c.setExpress(express);
         c.setDateLivraison(express ? reception.plusDays(1) : reception.plusDays(3));
     }
+
+
+
+    // 🔹 Chiffre d’affaires du jour
+    public Double getCAJournalier() {
+        Utilisateur user = getUserConnecte();
+        LocalDate today = LocalDate.now();
+
+        Double caBrut = commandeRepository
+                .sumMontantNetByDateAndPressing(today, user.getPressing().getId())
+                .orElse(0.0);
+
+        Double charges = chargeRepository
+                .sumChargesByDateAndPressing(today, user.getPressing().getId());
+
+        return caBrut - charges;
+    }
+
+    // 🔹 Chiffre d’affaires hebdomadaire
+    public Double getCAHebdomadaire() {
+        Utilisateur user = getUserConnecte();
+        LocalDate debut = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        LocalDate fin = LocalDate.now().with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
+
+        Double caBrut = commandeRepository
+                .sumMontantNetBetweenDatesAndPressing(debut, fin, user.getPressing().getId())
+                .orElse(0.0);
+
+        Double charges = chargeRepository
+                .sumChargesBetweenDatesAndPressing(debut, fin, user.getPressing().getId());
+
+        return Math.round((caBrut - charges) * 100.0) / 100.0;
+    }
+
+    // 🔹 Chiffre d’affaires mensuel
+    public Double getCAMensuel() {
+        Utilisateur user = getUserConnecte();
+        LocalDate debut = LocalDate.now().withDayOfMonth(1);
+        LocalDate fin = LocalDate.now().withDayOfMonth(LocalDate.now().lengthOfMonth());
+
+        Double caBrut = commandeRepository
+                .sumMontantNetBetweenDatesAndPressing(debut, fin, user.getPressing().getId())
+                .orElse(0.0);
+
+        Double charges = chargeRepository
+                .sumChargesBetweenDatesAndPressing(debut, fin, user.getPressing().getId());
+
+        return Math.round((caBrut - charges) * 100.0) / 100.0;
+    }
+
+    // 🔹 Chiffre d’affaires annuel
+    public Double getCAAnnuel() {
+        Utilisateur user = getUserConnecte();
+        LocalDate debut = LocalDate.now().withDayOfYear(1);
+        LocalDate fin = LocalDate.now().with(TemporalAdjusters.lastDayOfYear());
+
+        Double caBrut = commandeRepository
+                .sumMontantNetBetweenDatesAndPressing(debut, fin, user.getPressing().getId())
+                .orElse(0.0);
+
+        Double charges = chargeRepository
+                .sumChargesBetweenDatesAndPressing(debut, fin, user.getPressing().getId());
+
+        return Math.round((caBrut - charges) * 100.0) / 100.0;
+    }
+
+
+
+
+    public Double getTotalImpayes() {
+        Utilisateur user = getUserConnecte();
+        return commandeRepository.sumResteAPayerByPressingAndStatutPaiement(
+                user.getPressing().getId(),
+                List.of(StatutPaiement.NON_PAYE, StatutPaiement.PARTIELLEMENT_PAYE)
+        ).orElse(0.0);
+    }
+
+
+    // 🔹 Changer le statut d'une commande
+    public CommandeDTO updateStatutCommande(Long commandeId, StatutCommande nouveauStatut) {
+        // Récupérer la commande
+        Commande commande = commandeRepository.findById(commandeId)
+                .orElseThrow(() -> new RuntimeException("Commande introuvable : " + commandeId));
+
+        // Mettre à jour le statut
+        commande.setStatut(nouveauStatut);
+
+        // Sauvegarder
+        Commande saved = commandeRepository.save(commande);
+
+        // Retourner DTO
+        return toDto(saved);
+    }
+
+
+
 }

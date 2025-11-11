@@ -119,4 +119,8 @@ public class Commande {
 
     public StatutPaiement getStatutPaiement() { return statutPaiement; }
     public double getMontantPaye() { return montantPaye; }
+
+    public void setStatutPaiement(StatutPaiement statutPaiement) {
+        this.statutPaiement = statutPaiement;
+    }
 }
