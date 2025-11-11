@@ -1,5 +1,6 @@
 package com.press.pro.service;
 
+import com.press.pro.Dto.ChargeDTO;
 import com.press.pro.Entity.Charge;
 import com.press.pro.Entity.Utilisateur;
 import com.press.pro.repository.ChargeRepository;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class ChargeService {
@@ -22,7 +24,6 @@ public class ChargeService {
         this.utilisateurRepository = utilisateurRepository;
     }
 
-    // ✅ Récupération du user connecté + pressing automatiquement
     private Utilisateur getUserConnecte() {
         String email = Optional.ofNullable(SecurityContextHolder.getContext().getAuthentication())
                 .map(auth -> auth.getName())
@@ -37,50 +38,52 @@ public class ChargeService {
         return user;
     }
 
-
-    // ✅ Création automatique avec le pressing du user
-    public Charge create(Charge charge) {
-
-        Utilisateur user = getUserConnecte();
-
-        // Le pressing n’est plus reçu => on l’associe ici
-        charge.setPressing(user.getPressing());
-
-        return chargeRepository.save(charge);
+    // Mapping entity -> DTO
+    private ChargeDTO toDTO(Charge charge) {
+        return new ChargeDTO(
+                charge.getId(),
+                charge.getDescription(),
+                charge.getMontant(),
+                charge.getDateCharge(),
+                charge.getPressing().getId(),
+                charge.getPressing().getNom()
+        );
     }
 
+    public ChargeDTO create(Charge charge) {
+        Utilisateur user = getUserConnecte();
+        charge.setPressing(user.getPressing());
+        Charge saved = chargeRepository.save(charge);
+        return toDTO(saved);
+    }
 
-    // ✅ Tous les enregistrements appartenant au pressing du user connecté
-    public List<Charge> findAll() {
+    public List<ChargeDTO> findAll() {
         Utilisateur user = getUserConnecte();
         return chargeRepository.findAll()
                 .stream()
                 .filter(c -> c.getPressing().getId().equals(user.getPressing().getId()))
-                .toList();
+                .map(this::toDTO)
+                .collect(Collectors.toList());
     }
 
-
-    public Optional<Charge> findById(Long id) {
-        return chargeRepository.findById(id);
+    public ChargeDTO findById(Long id) {
+        Charge charge = chargeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Charge introuvable avec l'id : " + id));
+        return toDTO(charge);
     }
 
-
-    // ✅ Mise à jour automatique avec le pressing du user
-    public Charge update(Long id, Charge updatedCharge) {
-
+    public ChargeDTO update(Long id, Charge updatedCharge) {
         Utilisateur user = getUserConnecte();
 
-        return chargeRepository.findById(id).map(charge -> {
-            charge.setDescription(updatedCharge.getDescription());
-            charge.setMontant(updatedCharge.getMontant());
+        Charge charge = chargeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Charge introuvable avec l'id : " + id));
 
-            // Le pressing est toujours celui du user
-            charge.setPressing(user.getPressing());
+        charge.setDescription(updatedCharge.getDescription());
+        charge.setMontant(updatedCharge.getMontant());
+        charge.setPressing(user.getPressing());
 
-            return chargeRepository.save(charge);
-        }).orElseThrow(() -> new RuntimeException("Charge introuvable avec l'id : " + id));
+        return toDTO(chargeRepository.save(charge));
     }
-
 
     public void delete(Long id) {
         chargeRepository.deleteById(id);
