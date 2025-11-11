@@ -1,6 +1,7 @@
 package com.press.pro.repository;
 
 
+import com.press.pro.Entity.Client;
 import com.press.pro.Entity.Pressing;
 import com.press.pro.enums.StatutCommande;
 import com.press.pro.enums.StatutPaiement;
@@ -56,6 +57,8 @@ public interface CommandeRepository extends JpaRepository<Commande, Long> {
             @Param("pressingId") Long pressingId,
             @Param("statuts") List<StatutPaiement> statuts
     );
+
+    boolean existsByClientAndDateReceptionAfter(Client client, LocalDate date);
 
 
 }
