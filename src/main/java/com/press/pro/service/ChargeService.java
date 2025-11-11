@@ -24,18 +24,16 @@ public class ChargeService {
         this.utilisateurRepository = utilisateurRepository;
     }
 
-    // Récupère l'utilisateur connecté
+    // Récupère l'utilisateur connecté (comme les autres KPIs)
     private Utilisateur getUserConnecte() {
         String email = Optional.ofNullable(SecurityContextHolder.getContext().getAuthentication())
                 .map(auth -> auth.getName())
                 .orElseThrow(() -> new RuntimeException("Aucun utilisateur connecté !"));
 
-        List<Utilisateur> users = utilisateurRepository.findAllByEmail(email.toLowerCase().trim());
+        // Utilisation de la méthode existante
+        Optional<Utilisateur> optionalUser = utilisateurRepository.findDistinctByEmailWithPressing(email.toLowerCase().trim());
 
-        if (users.isEmpty())
-            throw new RuntimeException("Utilisateur connecté introuvable : " + email);
-
-        Utilisateur user = users.get(0); // prendre le premier si doublons (comme pour les autres KPIs)
+        Utilisateur user = optionalUser.orElseThrow(() -> new RuntimeException("Utilisateur connecté introuvable : " + email));
 
         if (user.getPressing() == null)
             throw new RuntimeException("Aucun pressing associé à cet utilisateur !");
@@ -64,7 +62,7 @@ public class ChargeService {
 
     public List<ChargeDTO> findAll() {
         Utilisateur user = getUserConnecte();
-        // On récupère toutes les charges DISTINCT par pressing comme les autres KPIs
+        // Récupération distincte des charges pour ce pressing
         List<Charge> charges = chargeRepository.findDistinctByPressingId(user.getPressing().getId());
         return charges.stream()
                 .map(this::toDTO)
