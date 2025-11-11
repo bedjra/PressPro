@@ -7,9 +7,15 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Repository
 public interface ChargeRepository extends JpaRepository<Charge, Long> {
+
+
+    @Query("SELECT DISTINCT c FROM Charge c WHERE c.pressing.id = :pressingId")
+    List<Charge> findDistinctByPressingId(@Param("pressingId") Long pressingId);
+
 
     // ✅ Total des charges entre deux dates (hebdo, mensuel, annuel, etc.)
     @Query("""
