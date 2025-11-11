@@ -48,6 +48,19 @@ public class CommandeController {
         return commandeService.getAllCommandes();
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<CommandeDTO> getCommandeById(@PathVariable Long id) {
+        try {
+            CommandeDTO dto = commandeService.getCommandeById(id);
+            return ResponseEntity.ok(dto);
+        } catch (RuntimeException e) {
+            return ResponseEntity
+                    .status(404)
+                    .body(null); // ou tu peux renvoyer un message d'erreur personnalisé
+        }
+    }
+
+
 
     @PutMapping("/{id}")
     public CommandeDTO updateCommande(@PathVariable Long id, @RequestBody CommandeDTO commandeDTO) {
