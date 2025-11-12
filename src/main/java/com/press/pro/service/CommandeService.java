@@ -360,14 +360,51 @@ public class CommandeService {
 
 
     public CommandeDTO getCommandeById(Long id) {
-        Utilisateur user = getUserConnecte(); // utilisateur connecté
+        // 🔹 Récupération de l'utilisateur connecté
+        Utilisateur user = getUserConnecte();
 
+        // 🔹 Recherche de la commande dans le pressing du user
         Commande commande = commandeRepository
                 .findDistinctByIdAndPressingId(id, user.getPressing().getId())
                 .orElseThrow(() -> new RuntimeException("Commande introuvable ou accès refusé : " + id));
 
-        return toDto(commande);
+        // 🔹 Conversion Entity -> DTO
+        CommandeDTO dto = new CommandeDTO();
+
+        // --- Informations principales ---
+        dto.setId(commande.getId());
+        dto.setExpress(commande.isExpress());
+        dto.setDateReception(commande.getDateReception());
+        dto.setDateLivraison(commande.getDateLivraison());
+        dto.setStatut(commande.getStatut());
+        dto.setStatutPaiement(commande.getStatutPaiement());
+
+        // --- Client ---
+        if (commande.getClient() != null) {
+            dto.setClientId(commande.getClient().getId());
+            dto.setClientNom(commande.getClient().getNom());
+            dto.setClientTelephone(commande.getClient().getTelephone());
+        }
+
+        // --- Paramètre (article, service, prix) ---
+        if (commande.getParametre() != null) {
+            dto.setParametreId(commande.getParametre().getId());
+            dto.setArticle(commande.getParametre().getArticle());
+            dto.setService(commande.getParametre().getService());
+            dto.setPrix(commande.getParametre().getPrix());
+        }
+
+        // --- Montants ---
+        dto.setQte(commande.getQte());
+        dto.setMontantBrut(commande.getMontantBrut());
+        dto.setRemise(commande.getRemise());
+        dto.setMontantNet(commande.getMontantNet());
+        dto.setMontantPaye(commande.getMontantPaye());
+        dto.setResteAPayer(commande.getResteAPayer());
+
+        return dto;
     }
+
 
 
 }
