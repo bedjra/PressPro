@@ -112,14 +112,6 @@ public class CommandeController {
     }
 
     // 🔹 Changer le statut d'une commande
-//    @PutMapping("/{id}/statut")
-//    public CommandeDTO changerStatut(
-//            @PathVariable("id") Long commandeId,
-//            @RequestParam("statut") StatutCommande statut) {
-//
-//        return commandeService.updateStatutCommande(commandeId, statut);
-//    }
-
     @PostMapping("/{id}/statut")
     public CommandeDTO updateStatutAvecPaiement(
             @PathVariable Long id,

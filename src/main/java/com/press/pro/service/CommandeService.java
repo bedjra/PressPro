@@ -112,7 +112,6 @@ public class CommandeService {
 
         return result;
     }
-
     // 🔹 Création + génération PDF directe
     public ResponseEntity<byte[]> saveCommandeEtTelechargerPdf(CommandeDTO dto) {
         CommandeDTO savedDto = saveCommande(dto);
