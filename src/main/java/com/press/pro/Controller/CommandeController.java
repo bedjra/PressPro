@@ -112,12 +112,36 @@ public class CommandeController {
     }
 
     // 🔹 Changer le statut d'une commande
-    @PutMapping("/{id}/statut")
-    public CommandeDTO changerStatut(
-            @PathVariable("id") Long commandeId,
-            @RequestParam("statut") StatutCommande statut) {
+//    @PutMapping("/{id}/statut")
+//    public CommandeDTO changerStatut(
+//            @PathVariable("id") Long commandeId,
+//            @RequestParam("statut") StatutCommande statut) {
+//
+//        return commandeService.updateStatutCommande(commandeId, statut);
+//    }
 
-        return commandeService.updateStatutCommande(commandeId, statut);
+    @PostMapping("/{id}/statut")
+    public CommandeDTO updateStatutAvecPaiement(
+            @PathVariable Long commandeId,
+            @RequestBody StatutPaiementRequest request) {
+
+        return commandeService.updateStatutCommandeAvecPaiement(
+                commandeId,
+                request.getStatut(),
+                request.getMontantActuel()
+        );
+    }
+
+    // --- DTO pour la requête ---
+    public static class StatutPaiementRequest {
+        private StatutCommande statut;
+        private double montantActuel;
+
+        public StatutCommande getStatut() { return statut; }
+        public void setStatut(StatutCommande statut) { this.statut = statut; }
+
+        public double getMontantActuel() { return montantActuel; }
+        public void setMontantActuel(double montantActuel) { this.montantActuel = montantActuel; }
     }
 
     @GetMapping("/totaux")
