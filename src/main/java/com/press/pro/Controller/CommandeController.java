@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -119,7 +120,10 @@ public class CommandeController {
         return commandeService.updateStatutCommande(commandeId, statut);
     }
 
-
+    @GetMapping("/totaux")
+    public BigDecimal getChiffreAffairesTotal() {
+        return commandeService.getChiffreAffairesTotal();
+    }
 
 
 }

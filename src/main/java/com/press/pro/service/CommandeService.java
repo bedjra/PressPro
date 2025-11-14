@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
@@ -467,6 +468,14 @@ public class CommandeService {
                 "dateReception", today,
                 "nbCommandes", nbCommandes
         );
+    }
+
+    // Chiffre d'affaires total
+    public BigDecimal getChiffreAffairesTotal() {
+        Utilisateur user = getUserConnecte();
+        Long pressingId = user.getPressing().getId();
+
+        return commandeRepository.sumMontantNetByPressing(pressingId);
     }
 
 }

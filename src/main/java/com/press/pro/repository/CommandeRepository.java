@@ -10,6 +10,7 @@ import com.press.pro.Entity.Commande;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -91,6 +92,10 @@ public interface CommandeRepository extends JpaRepository<Commande, Long> {
             @Param("pressingId") Long pressingId,
             @Param("date") LocalDate date
     );
+
+
+    @Query("SELECT COALESCE(SUM(c.montantNet), 0) FROM Commande c WHERE c.pressing.id = :pressingId")
+    BigDecimal sumMontantNetByPressing(@Param("pressingId") Long pressingId);
 
 }
 
