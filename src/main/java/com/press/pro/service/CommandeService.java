@@ -370,7 +370,6 @@ public class CommandeService {
 
 
 
-    // 🔹 Changer le statut et éventuellement ajouter un paiement partiel
     public CommandeDTO updateStatutCommandeAvecPaiement(Long commandeId,
                                                         StatutCommande nouveauStatut,
                                                         double montantActuel) {
@@ -387,24 +386,45 @@ public class CommandeService {
         if (montantActuel > 0) {
             double nouveauMontantPaye = commande.getMontantPaye() + montantActuel;
             commande.setMontantPaye(nouveauMontantPaye);
-            // statut de paiement mis à jour automatiquement via setMontantPaye
         }
 
         // 🔹 Sauvegarde
         Commande saved = commandeRepository.save(commande);
 
-        // 🔹 Conversion DTO
+        // 🔹 Conversion DTO complète (comme getCommandeById)
         CommandeDTO dto = new CommandeDTO();
         dto.setId(saved.getId());
-        dto.setMontantNet(saved.getMontantNet());
-        dto.setMontantPaye(saved.getMontantPaye());
-        dto.setResteAPayer(saved.getResteAPayer());
+        dto.setExpress(saved.isExpress());
+        dto.setDateReception(saved.getDateReception());
+        dto.setDateLivraison(saved.getDateLivraison());
         dto.setStatut(saved.getStatut());
         dto.setStatutPaiement(saved.getStatutPaiement());
 
+        // --- Client ---
+        if (saved.getClient() != null) {
+            dto.setClientId(saved.getClient().getId());
+            dto.setClientNom(saved.getClient().getNom());
+            dto.setClientTelephone(saved.getClient().getTelephone());
+        }
+
+        // --- Paramètre ---
+        if (saved.getParametre() != null) {
+            dto.setParametreId(saved.getParametre().getId());
+            dto.setArticle(saved.getParametre().getArticle());
+            dto.setService(saved.getParametre().getService());
+            dto.setPrix(saved.getParametre().getPrix());
+        }
+
+        // --- Montants ---
+        dto.setQte(saved.getQte());
+        dto.setMontantBrut(saved.getMontantBrut());
+        dto.setRemise(saved.getRemise());
+        dto.setMontantNet(saved.getMontantNet());
+        dto.setMontantPaye(saved.getMontantPaye());
+        dto.setResteAPayer(saved.getResteAPayer());
+
         return dto;
     }
-
 
 
     public CommandeDTO getCommandeById(Long id) {

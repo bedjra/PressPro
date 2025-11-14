@@ -122,15 +122,15 @@ public class CommandeController {
 
     @PostMapping("/{id}/statut")
     public CommandeDTO updateStatutAvecPaiement(
-            @PathVariable Long commandeId,
+            @PathVariable Long id,
             @RequestBody StatutPaiementRequest request) {
-
         return commandeService.updateStatutCommandeAvecPaiement(
-                commandeId,
+                id,
                 request.getStatut(),
                 request.getMontantActuel()
         );
     }
+
 
     // --- DTO pour la requête ---
     public static class StatutPaiementRequest {
