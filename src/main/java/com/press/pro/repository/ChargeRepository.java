@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.math.BigDecimal;
 
 @Repository
 public interface ChargeRepository extends JpaRepository<Charge, Long> {
@@ -41,4 +42,9 @@ public interface ChargeRepository extends JpaRepository<Charge, Long> {
             @Param("date") LocalDate date,
             @Param("pressingId") Long pressingId
     );
+
+    @Query("SELECT COALESCE(SUM(c.montant), 0) FROM Charge c WHERE c.pressing.id = :pressingId")
+    BigDecimal sumByPressingId(@Param("pressingId") Long pressingId);
+
+
 }

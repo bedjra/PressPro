@@ -8,6 +8,7 @@ import com.press.pro.repository.UtilisateurRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -91,4 +92,14 @@ public class ChargeService {
     public void delete(Long id) {
         chargeRepository.deleteById(id);
     }
+
+
+    public BigDecimal getTotalCharges() {
+        Utilisateur user = getUserConnecte();
+        Long pressingId = user.getPressing().getId();
+
+        return chargeRepository.sumByPressingId(pressingId);
+    }
+
+
 }

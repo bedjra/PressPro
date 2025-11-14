@@ -5,6 +5,7 @@ import com.press.pro.Entity.Charge;
 import com.press.pro.service.ChargeService;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -41,4 +42,10 @@ public class ChargeController {
     public void delete(@PathVariable Long id) {
         chargeService.delete(id);
     }
+
+    @GetMapping("/charge")
+    public BigDecimal getTotalCharges() {
+        return chargeService.getTotalCharges();
+    }
+
 }
