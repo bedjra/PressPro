@@ -43,7 +43,7 @@ public class ChargeController {
         chargeService.delete(id);
     }
 
-    @GetMapping("/charge")
+    @GetMapping("/totaux")
     public BigDecimal getTotalCharges() {
         return chargeService.getTotalCharges();
     }
