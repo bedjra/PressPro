@@ -64,5 +64,33 @@ public interface CommandeRepository extends JpaRepository<Commande, Long> {
     @Query("SELECT DISTINCT c FROM Commande c WHERE c.id = :id AND c.pressing.id = :pressingId")
     Optional<Commande> findDistinctByIdAndPressingId(@Param("id") Long id, @Param("pressingId") Long pressingId);
 
+
+
+    @Query("""
+    SELECT FUNCTION('DATE', c.dateReception), COUNT(DISTINCT c)
+    FROM Commande c
+    WHERE c.pressing.id = :pressingId
+      AND FUNCTION('DATE', c.dateReception) = :date
+    GROUP BY FUNCTION('DATE', c.dateReception)
+""")
+    List<Object[]> countCommandesByPressingAndDate(
+            @Param("pressingId") Long pressingId,
+            @Param("date") LocalDate date
+    );
+
+    @Query("""
+    SELECT FUNCTION('DATE', c.dateReception), COUNT(DISTINCT c)
+    FROM Commande c
+    WHERE c.statut = :statut
+      AND c.pressing.id = :pressingId
+      AND FUNCTION('DATE', c.dateReception) = :date
+    GROUP BY FUNCTION('DATE', c.dateReception)
+""")
+    List<Object[]> countCommandesByStatutAndPressingAndDate(
+            @Param("statut") StatutCommande statut,
+            @Param("pressingId") Long pressingId,
+            @Param("date") LocalDate date
+    );
+
 }
 

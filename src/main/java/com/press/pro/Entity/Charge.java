@@ -30,9 +30,8 @@ public class Charge {
     @JoinColumn(name = "pressing_id", nullable = false)
     private Pressing pressing;
 
+
     // Getters & Setters
-
-
     public LocalDate getDateCharge() {
         return dateCharge;
     }

@@ -156,6 +156,29 @@ public class CommandeService {
         return toDto(commandeRepository.save(commande));
     }
 
+
+    // 🔹 Méthodes utilitaires
+    private void applyParametreEtMontant(Commande c, Long parametreId) {
+        Parametre param = parametreRepository.findById(parametreId)
+                .orElseThrow(() -> new RuntimeException("Paramètre introuvable : " + parametreId));
+        c.setParametre(param);
+        c.setMontantBrut(param.getPrix() * c.getQte());
+    }
+
+    private void applyRemiseEtNet(Commande c, Double remise) {
+        c.setRemise(remise != null ? remise : 0.0);
+        c.setMontantNet(c.getMontantBrut() - c.getRemise());
+    }
+
+    private void applyDates(Commande c, boolean express, LocalDate dateReception) {
+        LocalDate reception = dateReception != null ? dateReception : LocalDate.now();
+        c.setDateReception(reception);
+        c.setExpress(express);
+        c.setDateLivraison(express ? reception.plusDays(1) : reception.plusDays(3));
+    }
+
+
+
     // 🔹 Récupération de toutes les commandes du pressing connecté
     public List<CommandeDTO> getAllCommandes() {
         Utilisateur user = getUserConnecte();
@@ -177,32 +200,6 @@ public class CommandeService {
 
 
 
-    // 🔹 Statistiques journalières filtrées par pressing
-    public List<Map<String, Object>> getTotalCommandesParJour() {
-        Long pressingId = getUserConnecte().getPressing().getId();
-        return mapToList(commandeRepository.countCommandesByDayAndPressing(pressingId));
-    }
-
-    public List<Map<String, Object>> getCommandesEnCoursParJour() {
-        Long pressingId = getUserConnecte().getPressing().getId();
-        return mapToList(commandeRepository.countCommandesByStatutAndDayAndPressing(StatutCommande.EN_COURS, pressingId));
-    }
-
-    public List<Map<String, Object>> getCommandesLivreesParJour() {
-        Long pressingId = getUserConnecte().getPressing().getId();
-        return mapToList(commandeRepository.countCommandesByStatutAndDayAndPressing(StatutCommande.LIVREE, pressingId));
-    }
-
-    private List<Map<String, Object>> mapToList(List<Object[]> data) {
-        List<Map<String, Object>> list = new ArrayList<>();
-        for (Object[] obj : data) {
-            Map<String, Object> map = new HashMap<>();
-            map.put("dateReception", obj[0]);
-            map.put("nbCommandes", obj[1]);
-            list.add(map);
-        }
-        return list;
-    }
 
 
 
@@ -245,26 +242,6 @@ public class CommandeService {
         return dto;
     }
 
-    // 🔹 Méthodes utilitaires
-    private void applyParametreEtMontant(Commande c, Long parametreId) {
-        Parametre param = parametreRepository.findById(parametreId)
-                .orElseThrow(() -> new RuntimeException("Paramètre introuvable : " + parametreId));
-        c.setParametre(param);
-        c.setMontantBrut(param.getPrix() * c.getQte());
-    }
-
-    private void applyRemiseEtNet(Commande c, Double remise) {
-        c.setRemise(remise != null ? remise : 0.0);
-        c.setMontantNet(c.getMontantBrut() - c.getRemise());
-    }
-
-    private void applyDates(Commande c, boolean express, LocalDate dateReception) {
-        LocalDate reception = dateReception != null ? dateReception : LocalDate.now();
-        c.setDateReception(reception);
-        c.setExpress(express);
-        c.setDateLivraison(express ? reception.plusDays(1) : reception.plusDays(3));
-    }
-
 
 
     // 🔹 Chiffre d’affaires du jour
@@ -272,14 +249,9 @@ public class CommandeService {
         Utilisateur user = getUserConnecte();
         LocalDate today = LocalDate.now();
 
-        Double caBrut = commandeRepository
+        return commandeRepository
                 .sumMontantNetByDateAndPressing(today, user.getPressing().getId())
                 .orElse(0.0);
-
-        Double charges = chargeRepository
-                .sumChargesByDateAndPressing(today, user.getPressing().getId());
-
-        return caBrut - charges;
     }
 
     // 🔹 Chiffre d’affaires hebdomadaire
@@ -292,10 +264,7 @@ public class CommandeService {
                 .sumMontantNetBetweenDatesAndPressing(debut, fin, user.getPressing().getId())
                 .orElse(0.0);
 
-        Double charges = chargeRepository
-                .sumChargesBetweenDatesAndPressing(debut, fin, user.getPressing().getId());
-
-        return Math.round((caBrut - charges) * 100.0) / 100.0;
+        return Math.round(caBrut * 100.0) / 100.0;
     }
 
     // 🔹 Chiffre d’affaires mensuel
@@ -308,10 +277,7 @@ public class CommandeService {
                 .sumMontantNetBetweenDatesAndPressing(debut, fin, user.getPressing().getId())
                 .orElse(0.0);
 
-        Double charges = chargeRepository
-                .sumChargesBetweenDatesAndPressing(debut, fin, user.getPressing().getId());
-
-        return Math.round((caBrut - charges) * 100.0) / 100.0;
+        return Math.round(caBrut * 100.0) / 100.0;
     }
 
     // 🔹 Chiffre d’affaires annuel
@@ -324,11 +290,9 @@ public class CommandeService {
                 .sumMontantNetBetweenDatesAndPressing(debut, fin, user.getPressing().getId())
                 .orElse(0.0);
 
-        Double charges = chargeRepository
-                .sumChargesBetweenDatesAndPressing(debut, fin, user.getPressing().getId());
-
-        return Math.round((caBrut - charges) * 100.0) / 100.0;
+        return Math.round(caBrut * 100.0) / 100.0;
     }
+
 
 
 
@@ -342,28 +306,7 @@ public class CommandeService {
     }
 
 
-    // 🔹 Changer le statut d'une commande
-//    public CommandeDTO updateStatutCommande(Long commandeId, StatutCommande nouveauStatut) {
-//        // Récupérer la commande
-//        Commande commande = commandeRepository.findById(commandeId)
-//                .orElseThrow(() -> new RuntimeException("Commande introuvable : " + commandeId));
-//
-//        // Mettre à jour le statut
-//        commande.setStatut(nouveauStatut);
-//
-//        // 🧠 Si la commande est terminée ou livrée, on considère qu’elle est soldée
-//        if (nouveauStatut == StatutCommande.LIVREE ) {
-//            commande.setMontantPaye(commande.getMontantNet());
-//            commande.setResteAPayer(0.0);
-//            commande.setStatutPaiement(StatutPaiement.PAYE);
-//        }
-//
-//        // Sauvegarder
-//        Commande saved = commandeRepository.save(commande);
-//
-//        // Retourner DTO complet
-//        return toDto(saved);
-//    }
+
 
     // 🔹 Changer le statut d'une commande
     public CommandeDTO updateStatutCommande(Long commandeId, StatutCommande nouveauStatut) {
@@ -473,5 +416,57 @@ public class CommandeService {
     }
 
 
+
+    // ======================== 📊 STATISTIQUES JOURNALIERES ========================
+
+    private long getNbCommandes(List<Object[]> results) {
+        return results.stream()
+                .map(r -> ((Number) r[1]).longValue())
+                .findFirst()
+                .orElse(0L);
+    }
+
+    public Map<String, Object> getTotalCommandesParJour() {
+        Long pressingId = getUserConnecte().getPressing().getId();
+        LocalDate today = LocalDate.now();
+
+        List<Object[]> results = commandeRepository.countCommandesByPressingAndDate(pressingId, today);
+        long nbCommandes = getNbCommandes(results);
+
+        return Map.of(
+                "dateReception", today,
+                "nbCommandes", nbCommandes
+        );
+    }
+
+    public Map<String, Object> getCommandesEnCoursParJour() {
+        Long pressingId = getUserConnecte().getPressing().getId();
+        LocalDate today = LocalDate.now();
+
+        List<Object[]> results = commandeRepository.countCommandesByStatutAndPressingAndDate(
+                StatutCommande.EN_COURS, pressingId, today
+        );
+        long nbCommandes = getNbCommandes(results);
+
+        return Map.of(
+                "dateReception", today,
+                "nbCommandes", nbCommandes
+        );
+    }
+
+    public Map<String, Object> getCommandesLivreesParJour() {
+        Long pressingId = getUserConnecte().getPressing().getId();
+        LocalDate today = LocalDate.now();
+
+        List<Object[]> results = commandeRepository.countCommandesByStatutAndPressingAndDate(
+                StatutCommande.LIVREE, pressingId, today
+        );
+        long nbCommandes = getNbCommandes(results);
+
+        return Map.of(
+                "dateReception", today,
+                "nbCommandes", nbCommandes
+        );
+    }
 
 }

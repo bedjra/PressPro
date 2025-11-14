@@ -70,20 +70,19 @@ public class CommandeController {
 
 
     @GetMapping("/total")
-    public List<Map<String, Object>> getTotalCommandesParJour() {
+    public Map<String, Object> getTotalCommandesParJour() {
         return commandeService.getTotalCommandesParJour();
     }
 
     @GetMapping("/cours")
-    public List<Map<String, Object>> getCommandesEnCoursParJour() {
+    public Map<String, Object> getCommandesEnCoursParJour() {
         return commandeService.getCommandesEnCoursParJour();
     }
 
     @GetMapping("/livree")
-    public List<Map<String, Object>> getCommandesLivreesParJour() {
+    public Map<String, Object> getCommandesLivreesParJour() {
         return commandeService.getCommandesLivreesParJour();
     }
-
 
 
     @GetMapping("/jour")
@@ -119,4 +118,7 @@ public class CommandeController {
 
         return commandeService.updateStatutCommande(commandeId, statut);
     }
+
+
+
 }
