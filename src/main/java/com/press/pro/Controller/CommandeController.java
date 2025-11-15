@@ -3,6 +3,7 @@ package com.press.pro.Controller;
 import com.press.pro.Dto.CommandeDTO;
 import com.press.pro.enums.StatutCommande;
 import com.press.pro.service.CommandeService;
+import com.press.pro.service.Pdf.ListeCommande;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -33,11 +34,12 @@ public class CommandeController {
     @Autowired
     private CommandeService commandeService;
 
+    @Autowired
+    private ListeCommande listeCommande; // 🔹 Injection du service PDF
 
-    @PostMapping
-    public CommandeDTO saveCommande(@RequestBody CommandeDTO commandeDTO) {
-        return commandeService.saveCommande(commandeDTO);
-    }
+
+
+
 
     @PostMapping("/pdf")
     public ResponseEntity<byte[]> createCommandeAvecPdf(@RequestBody CommandeDTO dto) {
@@ -141,5 +143,17 @@ public class CommandeController {
         return commandeService.getChiffreAffairesTotal();
     }
 
+
+    // 🔹 Nouveau endpoint pour le PDF
+    @GetMapping("/pdf")
+    public ResponseEntity<byte[]> exportPdf() {
+        byte[] pdfBytes = listeCommande.generatePdf();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("filename", "commandes.pdf");
+
+        return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
+    }
 
 }

@@ -42,8 +42,6 @@ public class Commande {
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate dateLivraison;
 
-    @Column(nullable = false)
-    private boolean express = false;
 
     @Enumerated(EnumType.STRING)
     private StatutPaiement statutPaiement = StatutPaiement.NON_PAYE;
@@ -114,8 +112,6 @@ public class Commande {
     public LocalDate getDateLivraison() { return dateLivraison; }
     public void setDateLivraison(LocalDate dateLivraison) { this.dateLivraison = dateLivraison; }
 
-    public boolean isExpress() { return express; }
-    public void setExpress(boolean express) { this.express = express; }
 
     public StatutPaiement getStatutPaiement() { return statutPaiement; }
     public double getMontantPaye() { return montantPaye; }

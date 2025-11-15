@@ -32,7 +32,7 @@ public class CommandeDTO {
     private Double resteAPayer;    // calculé = montantNet - montantPaye
 
     // Express / dates
-    private boolean express;
+//    private boolean express;
 
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate dateReception;
@@ -158,13 +158,13 @@ public class CommandeDTO {
         this.resteAPayer = resteAPayer;
     }
 
-    public boolean isExpress() {
-        return express;
-    }
-
-    public void setExpress(boolean express) {
-        this.express = express;
-    }
+//    public boolean isExpress() {
+//        return express;
+//    }
+//
+//    public void setExpress(boolean express) {
+//        this.express = express;
+//    }
 
     public LocalDate getDateReception() {
         return dateReception;

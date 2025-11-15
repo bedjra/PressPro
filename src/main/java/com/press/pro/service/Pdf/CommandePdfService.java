@@ -1,4 +1,4 @@
-package com.press.pro.service;
+package com.press.pro.service.Pdf;
 
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.*;
@@ -10,16 +10,11 @@ import com.press.pro.Entity.Pressing;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.file.*;
 import java.time.format.DateTimeFormatter;
 import java.util.stream.Stream;
 
 @Service
 public class CommandePdfService {
-
-    private static final String DOSSIER_COMMANDES = "CommandesPdf";
 
     public byte[] genererCommandePdf(Commande commande) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -46,7 +41,7 @@ public class CommandePdfService {
             PdfPCell logoCell = new PdfPCell();
             logoCell.setBorder(Rectangle.NO_BORDER);
             logoCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
-            if (pressing.getLogo() != null) {
+            if (pressing.getLogo() != null && !pressing.getLogo().isBlank()) {
                 Image logo = Image.getInstance(pressing.getLogo());
                 logo.scaleToFit(40, 40);
                 logoCell.addElement(logo);
@@ -82,7 +77,6 @@ public class CommandePdfService {
             commandeTable.addCell(createCellLeft("Livraison:", fontInfo));
             commandeTable.addCell(createCellLeft(commande.getDateLivraison().format(formatter), fontInfo));
 
-            // ✅ Ajout du montant payé et du statut de paiement
             commandeTable.addCell(createCellLeft("Montant payé:", fontInfo));
             commandeTable.addCell(createCellLeft(String.format("%.0f F", commande.getMontantPaye()), fontInfo));
 
@@ -167,8 +161,6 @@ public class CommandePdfService {
 
             document.close();
 
-            sauvegarderPdf(out.toByteArray(), commande.getId());
-
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("Erreur lors de la génération du PDF : " + e.getMessage());
@@ -200,16 +192,5 @@ public class CommandePdfService {
         cell.setHorizontalAlignment(Element.ALIGN_RIGHT);
         cell.setPadding(3f);
         return cell;
-    }
-
-    private void sauvegarderPdf(byte[] pdfBytes, Long idCommande) throws IOException {
-        Path dossier = Paths.get(DOSSIER_COMMANDES);
-        if (!Files.exists(dossier)) Files.createDirectories(dossier);
-
-        String filename = "Commande_" + idCommande + ".pdf";
-        Path cheminComplet = dossier.resolve(filename);
-        try (FileOutputStream fos = new FileOutputStream(cheminComplet.toFile())) {
-            fos.write(pdfBytes);
-        }
     }
 }

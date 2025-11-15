@@ -8,6 +8,7 @@ import com.press.pro.Entity.Utilisateur;
 import com.press.pro.enums.StatutCommande;
 import com.press.pro.enums.StatutPaiement;
 import com.press.pro.repository.*;
+import com.press.pro.service.Pdf.CommandePdfService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -59,12 +60,11 @@ public class CommandeService {
     }
 
     // 🔹 Création / Enregistrement d'une commande
-    public CommandeDTO saveCommande(CommandeDTO dto) {
+    public Commande saveCommandeEntity(CommandeDTO dto) {
         if (dto.getClientId() == null) {
             throw new RuntimeException("Le client est obligatoire");
         }
 
-        // Récupération de l'utilisateur connecté et du pressing associé
         Utilisateur user = getUserConnecte();
 
         // Conversion DTO -> Entity
@@ -84,47 +84,49 @@ public class CommandeService {
         // Appliquer remise et montant net
         applyRemiseEtNet(commande, dto.getRemise());
 
-        // Appliquer les dates (reception + livraison express ou standard)
-        applyDates(commande, dto.isExpress(), dto.getDateReception());
-
         // Statut de la commande
         commande.setStatut(StatutCommande.EN_COURS);
 
-        // 🧠 Gestion du paiement
+        // Gestion du paiement
         double montantPaye = dto.getMontantPaye() != null ? dto.getMontantPaye() : 0;
-        commande.setMontantPaye(montantPaye); // met automatiquement à jour le statutPaiement
+        commande.setMontantPaye(montantPaye);
 
-        // Optionnel : forcer le statutPaiement si fourni
         if (dto.getStatutPaiement() != null) {
             commande.setStatutPaiement(dto.getStatutPaiement());
         }
 
         // Sauvegarde dans la base
-        Commande saved = commandeRepository.save(commande);
-
-        // Génération PDF automatique
-        commandePdfService.genererCommandePdf(saved);
-
-        // Conversion Entity -> DTO pour renvoi
-        CommandeDTO result = toDto(saved);
-        result.setMontantPaye(saved.getMontantPaye());
-        result.setResteAPayer(saved.getResteAPayer());
-
-        return result;
+        return commandeRepository.save(commande);
     }
-    // 🔹 Création + génération PDF directe
+
+    // 🔹 Créer la commande et renvoyer directement le PDF
     public ResponseEntity<byte[]> saveCommandeEtTelechargerPdf(CommandeDTO dto) {
-        CommandeDTO savedDto = saveCommande(dto);
-        Commande commande = commandeRepository.findById(savedDto.getId())
-                .orElseThrow(() -> new RuntimeException("Commande introuvable : " + savedDto.getId()));
+        Commande savedCommande = saveCommandeEntity(dto);
 
-        byte[] pdf = commandePdfService.genererCommandePdf(commande);
+        // Génération du PDF
+        byte[] pdf = commandePdfService.genererCommandePdf(savedCommande);
 
+        // Retour HTTP pour téléchargement direct
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=commande_" + commande.getId() + ".pdf")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=commande_" + savedCommande.getId() + ".pdf")
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(pdf);
     }
+
+    // --- Méthodes utilitaires ---
+    private Commande fromDto(CommandeDTO dto) {
+        Commande c = new Commande();
+        c.setQte(dto.getQte());
+        c.setRemise(dto.getRemise() != null ? dto.getRemise() : 0);
+        c.setMontantBrut(dto.getMontantBrut() != null ? dto.getMontantBrut() : 0);
+        c.setMontantNet(dto.getMontantNet() != null ? dto.getMontantNet() : 0);
+        return c;
+    }
+
+
+
+
+
 
     // 🔹 Mise à jour d'une commande
     public CommandeDTO updateCommande(Long id, CommandeDTO dto) {
@@ -143,8 +145,6 @@ public class CommandeService {
         if (dto.getDateReception() != null)
             commande.setDateReception(dto.getDateReception());
 
-        if (dto.isExpress() != commande.isExpress())
-            applyDates(commande, dto.isExpress(), commande.getDateReception());
 
         if (dto.getStatut() != null)
             commande.setStatut(dto.getStatut());
@@ -173,7 +173,6 @@ public class CommandeService {
     private void applyDates(Commande c, boolean express, LocalDate dateReception) {
         LocalDate reception = dateReception != null ? dateReception : LocalDate.now();
         c.setDateReception(reception);
-        c.setExpress(express);
         c.setDateLivraison(express ? reception.plusDays(1) : reception.plusDays(3));
     }
 
@@ -199,22 +198,6 @@ public class CommandeService {
     }
 
 
-
-
-
-
-
-
-    // 🔹 Conversion DTO -> Entity
-    private Commande fromDto(CommandeDTO dto) {
-        Commande c = new Commande();
-        c.setQte(dto.getQte() != null ? dto.getQte() : 1);
-        c.setExpress(dto.isExpress());
-        c.setDateReception(dto.getDateReception());
-        c.setStatutPaiement(dto.getStatutPaiement() != null ? dto.getStatutPaiement() : StatutPaiement.NON_PAYE);
-        return c;
-    }
-
     // 🔹 Conversion Entity -> DTO
     public CommandeDTO toDto(Commande c) {
         CommandeDTO dto = new CommandeDTO();
@@ -234,7 +217,6 @@ public class CommandeService {
         dto.setMontantBrut(c.getMontantBrut());
         dto.setRemise(c.getRemise());
         dto.setMontantNet(c.getMontantNet());
-        dto.setExpress(c.isExpress());
         dto.setDateReception(c.getDateReception());
         dto.setDateLivraison(c.getDateLivraison());
         dto.setStatut(c.getStatut());
@@ -333,7 +315,6 @@ public class CommandeService {
         // 🔹 Conversion DTO complète (comme getCommandeById)
         CommandeDTO dto = new CommandeDTO();
         dto.setId(saved.getId());
-        dto.setExpress(saved.isExpress());
         dto.setDateReception(saved.getDateReception());
         dto.setDateLivraison(saved.getDateLivraison());
         dto.setStatut(saved.getStatut());
@@ -380,7 +361,6 @@ public class CommandeService {
 
         // --- Informations principales ---
         dto.setId(commande.getId());
-        dto.setExpress(commande.isExpress());
         dto.setDateReception(commande.getDateReception());
         dto.setDateLivraison(commande.getDateLivraison());
         dto.setStatut(commande.getStatut());
