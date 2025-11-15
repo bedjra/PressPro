@@ -49,11 +49,7 @@ public class Commande {
     @Column(nullable = false)
     private double montantPaye = 0; // montant déjà versé
 
-//    @PrePersist
-//    public void calculerDateLivraison() {
-//        if (dateReception == null) dateReception = LocalDate.now();
-//        dateLivraison = express ? dateReception.plusDays(1) : dateReception.plusDays(3);
-//    }
+
 
     public void setMontantPaye(double montantPaye) {
         this.montantPaye = montantPaye;

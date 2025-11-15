@@ -76,6 +76,10 @@ public class CommandeService {
                 .orElseThrow(() -> new RuntimeException("Client introuvable : " + dto.getClientId()));
         commande.setClient(client);
 
+        // ASSIGNATION DES DATES depuis le DTO
+        commande.setDateReception(dto.getDateReception());
+        commande.setDateLivraison(dto.getDateLivraison());
+
         // Appliquer les paramètres et calculer les montants
         if (dto.getParametreId() != null) {
             applyParametreEtMontant(commande, dto.getParametreId());
@@ -98,6 +102,7 @@ public class CommandeService {
         // Sauvegarde dans la base
         return commandeRepository.save(commande);
     }
+
 
     // 🔹 Créer la commande et renvoyer directement le PDF
     public ResponseEntity<byte[]> saveCommandeEtTelechargerPdf(CommandeDTO dto) {

@@ -3,6 +3,7 @@ package com.press.pro.Dto;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.press.pro.enums.StatutCommande;
 import com.press.pro.enums.StatutPaiement;
+import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
 
@@ -31,15 +32,14 @@ public class CommandeDTO {
     private Double montantPaye;    // montant déjà versé
     private Double resteAPayer;    // calculé = montantNet - montantPaye
 
-    // Express / dates
-//    private boolean express;
 
+    @NotNull(message = "La date de réception est obligatoire")
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate dateReception;
 
+    @NotNull(message = "La date de livraison est obligatoire")
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate dateLivraison;
-
     // Statuts
     private StatutCommande statut;
     private StatutPaiement statutPaiement;

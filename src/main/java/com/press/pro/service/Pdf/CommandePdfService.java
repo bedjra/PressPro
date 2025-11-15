@@ -10,11 +10,17 @@ import com.press.pro.Entity.Pressing;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.format.DateTimeFormatter;
 import java.util.stream.Stream;
 
 @Service
 public class CommandePdfService {
+
+    // Dossier racine pour tous les PDF
+    private static final String PDF_BASE_FOLDER = "pdfCommandes/";
 
     public byte[] genererCommandePdf(Commande commande) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -160,6 +166,16 @@ public class CommandePdfService {
             document.add(signature);
 
             document.close();
+
+            // === Sauvegarde PDF dans le dossier du pressing ===
+            String pressingName = pressing.getNom().replaceAll("[^a-zA-Z0-9]", "_");
+            String pressingFolder = PDF_BASE_FOLDER + pressingName + "/";
+            Files.createDirectories(Paths.get(pressingFolder));
+
+            String pdfFilePath = pressingFolder + "commande_" + commande.getId() + ".pdf";
+            try (FileOutputStream fos = new FileOutputStream(pdfFilePath)) {
+                fos.write(out.toByteArray());
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
