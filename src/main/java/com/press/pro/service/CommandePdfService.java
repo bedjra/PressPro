@@ -46,24 +46,12 @@ public class CommandePdfService {
             PdfPCell logoCell = new PdfPCell();
             logoCell.setBorder(Rectangle.NO_BORDER);
             logoCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
-
-            if (pressing.getLogo() != null && !pressing.getLogo().isBlank()) {
-                try {
-                    Path logoPath = Paths.get(pressing.getLogo());
-                    if (Files.exists(logoPath)) {
-                        Image logo = Image.getInstance(logoPath.toAbsolutePath().toString());
-                        logo.scaleToFit(40, 40);
-                        logoCell.addElement(logo);
-                    } else {
-                        System.out.println("Logo introuvable : " + pressing.getLogo());
-                    }
-                } catch (Exception e) {
-                    System.out.println("Erreur lors de l'ajout du logo : " + e.getMessage());
-                    // On continue sans logo
-                }
+            if (pressing.getLogo() != null) {
+                Image logo = Image.getInstance(pressing.getLogo());
+                logo.scaleToFit(40, 40);
+                logoCell.addElement(logo);
             }
             headerTable.addCell(logoCell);
-
 
             // Infos Pressing
             PdfPCell infoCell = new PdfPCell();
