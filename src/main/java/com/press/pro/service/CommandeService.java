@@ -133,7 +133,6 @@ public class CommandeService {
 
 
 
-    // 🔹 Mise à jour d'une commande
     public CommandeDTO updateCommande(Long id, CommandeDTO dto) {
         Utilisateur user = getUserConnecte();
 
@@ -150,15 +149,25 @@ public class CommandeService {
         if (dto.getDateReception() != null)
             commande.setDateReception(dto.getDateReception());
 
-
         if (dto.getStatut() != null)
             commande.setStatut(dto.getStatut());
 
-        // 🧠 Mise à jour du statut de paiement si fourni
         if (dto.getStatutPaiement() != null)
             commande.setStatutPaiement(dto.getStatutPaiement());
 
-        return toDto(commandeRepository.save(commande));
+        // 🔄 Sauvegarde
+        commandeRepository.save(commande);
+
+        // 🟦 Conversion en DTO
+        CommandeDTO resultat = toDto(commande);
+
+        // 🔄 Calcul du reste à payer dans le DTO (pas dans l'entité)
+        if (resultat.getMontantNet() != null && resultat.getMontantPaye() != null) {
+            double reste = resultat.getMontantNet() - resultat.getMontantPaye();
+            resultat.setResteAPayer(Math.max(reste, 0));
+        }
+
+        return resultat;
     }
 
 
