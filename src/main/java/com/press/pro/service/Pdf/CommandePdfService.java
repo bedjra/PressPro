@@ -47,42 +47,42 @@ public class CommandePdfService {
             PdfPCell logoCell = new PdfPCell();
             logoCell.setBorder(Rectangle.NO_BORDER);
             logoCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
-
-            if (pressing.getLogo() != null && !pressing.getLogo().isBlank()) {
-                try {
-                    Image logo = null;
-                    String logoPath = pressing.getLogo().trim();
-
-                    if (logoPath.startsWith("http://") || logoPath.startsWith("https://")) {
-                        try {
-                            java.net.URL url = new java.net.URL(logoPath);
-                            logo = Image.getInstance(url);
-                        } catch (Exception e) {
-                            System.err.println("Erreur chargement logo depuis URL: " + e.getMessage());
-                        }
-                    } else {
-                        try {
-                            java.nio.file.Path path = java.nio.file.Paths.get(logoPath);
-                            if (java.nio.file.Files.exists(path)) {
-                                logo = Image.getInstance(path.toAbsolutePath().toString());
-                            } else {
-                                System.err.println("Fichier logo introuvable: " + logoPath);
-                            }
-                        } catch (Exception e) {
-                            System.err.println("Erreur chargement logo depuis fichier: " + e.getMessage());
-                        }
-                    }
-
-                    if (logo != null) {
-                        logo.scaleToFit(40, 40);
-                        logoCell.addElement(logo);
-                    }
-                } catch (Exception e) {
-                    System.err.println("Erreur générale lors du chargement du logo: " + e.getMessage());
-                }
-            }
-
-            headerTable.addCell(logoCell);
+//
+//            if (pressing.getLogo() != null && !pressing.getLogo().isBlank()) {
+//                try {
+//                    Image logo = null;
+//                    String logoPath = pressing.getLogo().trim();
+//
+//                    if (logoPath.startsWith("http://") || logoPath.startsWith("https://")) {
+//                        try {
+//                            java.net.URL url = new java.net.URL(logoPath);
+//                            logo = Image.getInstance(url);
+//                        } catch (Exception e) {
+//                            System.err.println("Erreur chargement logo depuis URL: " + e.getMessage());
+//                        }
+//                    } else {
+//                        try {
+//                            java.nio.file.Path path = java.nio.file.Paths.get(logoPath);
+//                            if (java.nio.file.Files.exists(path)) {
+//                                logo = Image.getInstance(path.toAbsolutePath().toString());
+//                            } else {
+//                                System.err.println("Fichier logo introuvable: " + logoPath);
+//                            }
+//                        } catch (Exception e) {
+//                            System.err.println("Erreur chargement logo depuis fichier: " + e.getMessage());
+//                        }
+//                    }
+//
+//                    if (logo != null) {
+//                        logo.scaleToFit(40, 40);
+//                        logoCell.addElement(logo);
+//                    }
+//                } catch (Exception e) {
+//                    System.err.println("Erreur générale lors du chargement du logo: " + e.getMessage());
+//                }
+//            }
+//
+//            headerTable.addCell(logoCell);
 
             // Infos Pressing
             PdfPCell infoCell = new PdfPCell();
