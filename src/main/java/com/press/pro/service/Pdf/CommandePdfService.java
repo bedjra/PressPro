@@ -47,11 +47,41 @@ public class CommandePdfService {
             PdfPCell logoCell = new PdfPCell();
             logoCell.setBorder(Rectangle.NO_BORDER);
             logoCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+
             if (pressing.getLogo() != null && !pressing.getLogo().isBlank()) {
-                Image logo = Image.getInstance(pressing.getLogo());
-                logo.scaleToFit(40, 40);
-                logoCell.addElement(logo);
+                try {
+                    Image logo = null;
+                    String logoPath = pressing.getLogo().trim();
+
+                    if (logoPath.startsWith("http://") || logoPath.startsWith("https://")) {
+                        try {
+                            java.net.URL url = new java.net.URL(logoPath);
+                            logo = Image.getInstance(url);
+                        } catch (Exception e) {
+                            System.err.println("Erreur chargement logo depuis URL: " + e.getMessage());
+                        }
+                    } else {
+                        try {
+                            java.nio.file.Path path = java.nio.file.Paths.get(logoPath);
+                            if (java.nio.file.Files.exists(path)) {
+                                logo = Image.getInstance(path.toAbsolutePath().toString());
+                            } else {
+                                System.err.println("Fichier logo introuvable: " + logoPath);
+                            }
+                        } catch (Exception e) {
+                            System.err.println("Erreur chargement logo depuis fichier: " + e.getMessage());
+                        }
+                    }
+
+                    if (logo != null) {
+                        logo.scaleToFit(40, 40);
+                        logoCell.addElement(logo);
+                    }
+                } catch (Exception e) {
+                    System.err.println("Erreur générale lors du chargement du logo: " + e.getMessage());
+                }
             }
+
             headerTable.addCell(logoCell);
 
             // Infos Pressing
@@ -82,9 +112,6 @@ public class CommandePdfService {
 
             commandeTable.addCell(createCellLeft("Livraison:", fontInfo));
             commandeTable.addCell(createCellLeft(commande.getDateLivraison().format(formatter), fontInfo));
-
-            commandeTable.addCell(createCellLeft("Montant payé:", fontInfo));
-            commandeTable.addCell(createCellLeft(String.format("%.0f F", commande.getMontantPaye()), fontInfo));
 
             commandeTable.addCell(createCellLeft("Statut paiement:", fontInfo));
             commandeTable.addCell(createCellLeft(String.valueOf(commande.getStatutPaiement()), fontInfo));
@@ -153,11 +180,24 @@ public class CommandePdfService {
             totalTable.addCell(createCellRight("Net à payer :", fontSection));
             totalTable.addCell(createCellRight(String.format("%.0f F", commande.getMontantNet()), fontSection));
 
+            // === Paiement ===
+            totalTable.addCell(createCellRight("Montant déjà payé :", fontTableHeader));
+            totalTable.addCell(createCellRight(String.format("%.0f F", commande.getMontantPaye()), fontTable));
+
+            totalTable.addCell(createCellRight("Reste à payer :", fontTableHeader));
+            totalTable.addCell(createCellRight(String.format("%.0f F", commande.getMontantNet() - commande.getMontantPaye()), fontSection));
+
             document.add(totalTable);
 
             document.add(Chunk.NEWLINE);
             document.add(new LineSeparator());
             document.add(Chunk.NEWLINE);
+
+            // === Pied de page ===
+            Paragraph footer = new Paragraph("Facture générée par Press-Pro", fontInfo);
+            footer.setAlignment(Element.ALIGN_CENTER);
+            footer.setSpacingBefore(10);
+            document.add(footer);
 
             // === Signature ===
             Paragraph signature = new Paragraph("Signature", fontInfo);

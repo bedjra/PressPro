@@ -63,7 +63,13 @@ public class PressingService {
         pressing.setEmail(user.getEmail()); // Email de l’admin
         pressing.setAdresse(req.getAdresse());
         pressing.setTelephone(req.getTelephone());
-        pressing.setLogo(req.getLogo());
+
+        // ⚡ Logo : si l'utilisateur fournit un logo, on le prend ; sinon, on utilise "logo.jpg" par défaut
+        if (req.getLogo() != null && !req.getLogo().isBlank()) {
+            pressing.setLogo(req.getLogo());
+        } else {
+            pressing.setLogo("logo.jpg"); // nom du fichier par défaut déjà dans src/main/resources/static/
+        }
 
         pressingRepository.save(pressing);
 

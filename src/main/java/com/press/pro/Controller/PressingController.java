@@ -8,6 +8,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 @Tag(name = "Pressing")
 @RestController
@@ -16,6 +22,19 @@ public class PressingController {
 
     @Autowired
     private PressingService pressingService;
+
+    @PostMapping("/logo")
+    public String uploadLogo(@RequestParam("file") MultipartFile file) throws IOException {
+
+        String folder = "src/main/resources/static/";
+        String filename = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+        Path path = Paths.get(folder + filename);
+
+        Files.copy(file.getInputStream(), path);
+
+        return filename; // tu renvoies juste le nom du fichier
+    }
+
 
     @Operation(summary = "Créer un pressing et l'associer à l'admin connecté")
     @PostMapping("/create")
@@ -47,4 +66,6 @@ public class PressingController {
         pressingService.deletePressing(id);
         return ResponseEntity.ok("Pressing supprimé avec succès");
     }
+
+
 }
