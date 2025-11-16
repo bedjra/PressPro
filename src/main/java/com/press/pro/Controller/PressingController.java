@@ -28,25 +28,21 @@ public class PressingController {
     @PostMapping("/create")
     @Transactional
     public ResponseEntity<PressingRequest> createPressingWithLogo(
-            @RequestParam("nom") String nom,
-            @RequestParam("adresse") String adresse,
-            @RequestParam("telephone") String telephone,
-            @RequestParam(value = "file", required = false) MultipartFile file // logo optionnel
+            @RequestBody PressingRequest req // on reçoit directement le DTO en JSON
     ) throws IOException {
 
-        PressingRequest req = new PressingRequest();
-        req.setNom(nom);
-        req.setAdresse(adresse);
-        req.setTelephone(telephone);
-
-        // ⚡ Gestion du logo
-        if (file != null && !file.isEmpty()) {
+        // ⚡ Gestion du logo si c'est un Base64
+        if (req.getLogo() != null && !req.getLogo().isBlank() && req.getLogo().startsWith("data:image")) {
             String folder = "src/main/resources/static/";
-            String filename = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+            String base64Data = req.getLogo().split(",")[1]; // on enlève le prefixe data:image/png;base64,
+            byte[] imageBytes = java.util.Base64.getDecoder().decode(base64Data);
+
+            String filename = System.currentTimeMillis() + "_logo.png";
             Path path = Paths.get(folder + filename);
-            Files.copy(file.getInputStream(), path);
+            Files.write(path, imageBytes);
+
             req.setLogo(filename); // on met le nom du fichier dans le DTO
-        } else {
+        } else if (req.getLogo() == null || req.getLogo().isBlank()) {
             req.setLogo("logo.jpg"); // logo par défaut
         }
 
