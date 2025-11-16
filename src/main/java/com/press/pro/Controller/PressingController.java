@@ -32,21 +32,33 @@ public class PressingController {
     ) throws IOException {
 
         // ⚡ Gestion du logo si c'est un Base64
+        String folder = "src/main/resources/static/";
+        String logoFilename;
+
         if (req.getLogo() != null && !req.getLogo().isBlank() && req.getLogo().startsWith("data:image")) {
-            String folder = "src/main/resources/static/";
-            String base64Data = req.getLogo().split(",")[1]; // on enlève le prefixe data:image/png;base64,
+            String base64Data = req.getLogo().split(",")[1]; // on enlève le prefixe
             byte[] imageBytes = java.util.Base64.getDecoder().decode(base64Data);
 
-            String filename = System.currentTimeMillis() + "_logo.png";
-            Path path = Paths.get(folder + filename);
+            logoFilename = System.currentTimeMillis() + "_logo.png";
+            Path path = Paths.get(folder + logoFilename);
             Files.write(path, imageBytes);
-
-            req.setLogo(filename); // on met le nom du fichier dans le DTO
         } else if (req.getLogo() == null || req.getLogo().isBlank()) {
-            req.setLogo("logo.jpg"); // logo par défaut
+            logoFilename = "logo.jpg"; // logo par défaut
+        } else {
+            // si req.getLogo() contient déjà un nom de fichier existant
+            logoFilename = req.getLogo();
         }
 
+        // mettre à jour le DTO pour stocker le nom du fichier
+        req.setLogo(logoFilename);
+
+        // créer le pressing
         PressingRequest dto = pressingService.createPressing(req);
+
+        // ⚡ Ajouter l'URL complète du logo pour le frontend
+        String baseUrl = "/static/"; // ou "http://localhost:8081/static/" si besoin
+        dto.setLogo(baseUrl + dto.getLogo());
+
         return ResponseEntity.ok(dto);
     }
 
