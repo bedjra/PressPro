@@ -5,6 +5,7 @@ import com.press.pro.Entity.Pressing;
 import com.press.pro.service.PressingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,22 +24,32 @@ public class PressingController {
     @Autowired
     private PressingService pressingService;
 
-    @PostMapping("/logo")
-    public String uploadLogo(@RequestParam("file") MultipartFile file) throws IOException {
-
-        String folder = "src/main/resources/static/";
-        String filename = System.currentTimeMillis() + "_" + file.getOriginalFilename();
-        Path path = Paths.get(folder + filename);
-
-        Files.copy(file.getInputStream(), path);
-
-        return filename; // tu renvoies juste le nom du fichier
-    }
-
-
-    @Operation(summary = "Créer un pressing et l'associer à l'admin connecté")
+    @Operation(summary = "Créer un pressing et l'associer à l'admin connecté avec un logo")
     @PostMapping("/create")
-    public ResponseEntity<PressingRequest> createPressing(@RequestBody PressingRequest req) {
+    @Transactional
+    public ResponseEntity<PressingRequest> createPressingWithLogo(
+            @RequestParam("nom") String nom,
+            @RequestParam("adresse") String adresse,
+            @RequestParam("telephone") String telephone,
+            @RequestParam(value = "file", required = false) MultipartFile file // logo optionnel
+    ) throws IOException {
+
+        PressingRequest req = new PressingRequest();
+        req.setNom(nom);
+        req.setAdresse(adresse);
+        req.setTelephone(telephone);
+
+        // ⚡ Gestion du logo
+        if (file != null && !file.isEmpty()) {
+            String folder = "src/main/resources/static/";
+            String filename = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+            Path path = Paths.get(folder + filename);
+            Files.copy(file.getInputStream(), path);
+            req.setLogo(filename); // on met le nom du fichier dans le DTO
+        } else {
+            req.setLogo("logo.jpg"); // logo par défaut
+        }
+
         PressingRequest dto = pressingService.createPressing(req);
         return ResponseEntity.ok(dto);
     }
@@ -66,6 +77,4 @@ public class PressingController {
         pressingService.deletePressing(id);
         return ResponseEntity.ok("Pressing supprimé avec succès");
     }
-
-
 }
