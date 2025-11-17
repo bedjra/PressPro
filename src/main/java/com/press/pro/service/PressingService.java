@@ -29,26 +29,6 @@ public class PressingService {
                 .orElseThrow(() -> new RuntimeException("Utilisateur connecté introuvable"));
     }
 
-    // 🔹 Mise à jour d’un pressing
-    @Transactional
-    public Pressing updatePressing(Long id, PressingRequest req) {
-        Pressing pressing = pressingRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Pressing introuvable"));
-
-        Utilisateur user = getUtilisateurConnecte();
-        // ⚡ Vérification : seul l’admin du pressing peut modifier
-        if (pressing.getAdmin() != null && !pressing.getAdmin().getId().equals(user.getId())) {
-            throw new RuntimeException("Vous n'êtes pas autorisé à modifier ce pressing");
-        }
-
-        pressing.setNom(req.getNom());
-        pressing.setAdresse(req.getAdresse());
-        pressing.setTelephone(req.getTelephone());
-        pressing.setLogo(req.getLogo());
-
-        return pressingRepository.save(pressing);
-    }
-
     // 🔹 Création d’un pressing et association à l’admin
     @Transactional
     public PressingRequest createPressing(PressingRequest req) {
@@ -65,8 +45,6 @@ public class PressingService {
         pressing.setTelephone(req.getTelephone());
         pressing.setLogo(req.getLogo());
 
-
-
         pressingRepository.save(pressing);
 
         // ⚡ Associer le pressing à l’utilisateur
@@ -75,6 +53,9 @@ public class PressingService {
 
         return mapToDto(pressing);
     }
+
+
+
 
     // 🔹 Récupérer le pressing de l’utilisateur connecté
     public PressingRequest getPressingPourUtilisateur() {
@@ -87,6 +68,9 @@ public class PressingService {
 
         return mapToDto(pressing);
     }
+
+
+
 
     // 🔹 Suppression d’un pressing
     @Transactional
@@ -108,6 +92,27 @@ public class PressingService {
 
         pressingRepository.delete(pressing);
     }
+
+    // 🔹 Mise à jour d’un pressing
+    @Transactional
+    public Pressing updatePressing(Long id, PressingRequest req) {
+        Pressing pressing = pressingRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Pressing introuvable"));
+
+        Utilisateur user = getUtilisateurConnecte();
+        // ⚡ Vérification : seul l’admin du pressing peut modifier
+        if (pressing.getAdmin() != null && !pressing.getAdmin().getId().equals(user.getId())) {
+            throw new RuntimeException("Vous n'êtes pas autorisé à modifier ce pressing");
+        }
+
+        pressing.setNom(req.getNom());
+        pressing.setAdresse(req.getAdresse());
+        pressing.setTelephone(req.getTelephone());
+        pressing.setLogo(req.getLogo());
+
+        return pressingRepository.save(pressing);
+    }
+
 
     // 🔹 Récupérer tous les pressings selon rôle
     public List<PressingRequest> getAllPressings() {

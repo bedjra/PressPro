@@ -1,5 +1,4 @@
 package com.press.pro.Dto;
-
 import java.sql.Blob;
 
 public class PressingRequest {
@@ -40,3 +39,4 @@ public class PressingRequest {
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 }
+
