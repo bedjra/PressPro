@@ -1,9 +1,10 @@
 package com.press.pro.Dto;
-import java.sql.Blob;
+
+
 
 public class PressingRequest {
     private Long id;
-    private Blob logo;
+    private String logo;
     private String nom;
     private String telephone;
     private String adresse;
@@ -11,7 +12,7 @@ public class PressingRequest {
 
     public PressingRequest() {}
 
-    public PressingRequest(Long id, Blob logo, String nom, String telephone, String adresse, String email) {
+    public PressingRequest(Long id, String  logo, String nom, String telephone, String adresse, String email) {
         this.id = id;
         this.logo = logo;
         this.nom = nom;
@@ -24,8 +25,8 @@ public class PressingRequest {
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
-    public Blob getLogo() { return logo; }
-    public void setLogo(Blob logo) { this.logo = logo; }
+    public String  getLogo() { return logo; }
+    public void setLogo(String  logo) { this.logo = logo; }
 
     public String getNom() { return nom; }
     public void setNom(String nom) { this.nom = nom; }
@@ -39,4 +40,3 @@ public class PressingRequest {
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 }
-

@@ -2,7 +2,6 @@ package com.press.pro.Entity;
 
 import jakarta.persistence.*;
 
-import java.sql.Blob;
 
 @Entity
 public class Pressing {
@@ -10,7 +9,7 @@ public class Pressing {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Blob logo;
+    private String  logo;
     private String nom;
     private String email;
     private String telephone;
@@ -22,7 +21,7 @@ public class Pressing {
 
     public Pressing() {}
 
-    public Pressing(String nom, Blob logo, String email, String telephone, String adresse) {
+    public Pressing(String nom, String  logo, String email, String telephone, String adresse) {
         this.nom = nom;
         this.logo = logo;
         this.email = email;
@@ -41,11 +40,11 @@ public class Pressing {
         this.id = id;
     }
 
-    public Blob getLogo() {
+    public String  getLogo() {
         return logo;
     }
 
-    public void setLogo(Blob logo) {
+    public void setLogo(String  logo) {
         this.logo = logo;
     }
 
