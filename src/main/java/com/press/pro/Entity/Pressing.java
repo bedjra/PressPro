@@ -8,11 +8,12 @@ public class Pressing {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    private String  logo;
+    @Lob
+    private byte[] logo;
     private String nom;
     private String email;
     private String telephone;
+    private String cel;
     private String adresse;
 
     // ⚡ Ajout de fetch lazy pour éviter les doublons
@@ -21,16 +22,25 @@ public class Pressing {
 
     public Pressing() {}
 
-    public Pressing(String nom, String  logo, String email, String telephone, String adresse) {
+    public Pressing(String nom, byte[]  logo, String email, String telephone,String cel, String adresse) {
         this.nom = nom;
         this.logo = logo;
         this.email = email;
         this.telephone = telephone;
+        this.cel =cel;
         this.adresse = adresse;
     }
 
     // Getters / Setters
 
+
+    public String getCel() {
+        return cel;
+    }
+
+    public void setCel(String cel) {
+        this.cel = cel;
+    }
 
     public Long getId() {
         return id;
@@ -40,11 +50,11 @@ public class Pressing {
         this.id = id;
     }
 
-    public String  getLogo() {
+    public byte[] getLogo() {
         return logo;
     }
 
-    public void setLogo(String  logo) {
+    public void setLogo( byte[]   logo) {
         this.logo = logo;
     }
 

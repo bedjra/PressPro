@@ -43,6 +43,7 @@ public class PressingService {
         pressing.setEmail(user.getEmail()); // Email de l’admin
         pressing.setAdresse(req.getAdresse());
         pressing.setTelephone(req.getTelephone());
+        pressing.setCel(req.getCel(pressing.getCel()));
         pressing.setLogo(req.getLogo());
 
         pressingRepository.save(pressing);
@@ -69,49 +70,8 @@ public class PressingService {
         return mapToDto(pressing);
     }
 
+    
 
-
-
-    // 🔹 Suppression d’un pressing
-    @Transactional
-    public void deletePressing(Long id) {
-        Pressing pressing = pressingRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Pressing non trouvé"));
-
-        Utilisateur user = getUtilisateurConnecte();
-        if (pressing.getAdmin() != null && !pressing.getAdmin().getId().equals(user.getId())) {
-            throw new RuntimeException("Vous n’êtes pas autorisé à supprimer ce pressing");
-        }
-
-        // ⚡ Détacher le pressing de l’admin avant suppression
-        if (pressing.getAdmin() != null) {
-            Utilisateur admin = pressing.getAdmin();
-            admin.setPressing(null);
-            utilisateurRepository.save(admin);
-        }
-
-        pressingRepository.delete(pressing);
-    }
-
-    // 🔹 Mise à jour d’un pressing
-    @Transactional
-    public Pressing updatePressing(Long id, PressingRequest req) {
-        Pressing pressing = pressingRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Pressing introuvable"));
-
-        Utilisateur user = getUtilisateurConnecte();
-        // ⚡ Vérification : seul l’admin du pressing peut modifier
-        if (pressing.getAdmin() != null && !pressing.getAdmin().getId().equals(user.getId())) {
-            throw new RuntimeException("Vous n'êtes pas autorisé à modifier ce pressing");
-        }
-
-        pressing.setNom(req.getNom());
-        pressing.setAdresse(req.getAdresse());
-        pressing.setTelephone(req.getTelephone());
-        pressing.setLogo(req.getLogo());
-
-        return pressingRepository.save(pressing);
-    }
 
 
     // 🔹 Récupérer tous les pressings selon rôle
@@ -136,6 +96,7 @@ public class PressingService {
         dto.setAdresse(pressing.getAdresse());
         dto.setTelephone(pressing.getTelephone());
         dto.setLogo(pressing.getLogo());
+        dto.getCel(pressing.getCel());
         dto.setEmail(pressing.getEmail());
         return dto;
     }
