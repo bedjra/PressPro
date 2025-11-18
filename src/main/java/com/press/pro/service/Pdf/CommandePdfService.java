@@ -136,7 +136,7 @@ public class CommandePdfService {
             table.setWidthPercentage(100);
             table.setWidths(new float[]{0.7f, 3f, 1.1f, 1f, 1.1f, 1.3f});
 
-            Stream.of("Qté", "Désignation", "P.V.U", "Remise", "Net", "Montant")
+            Stream.of("Qté", "Article", "P.U", "Remise", "Net", "Montant")
                     .forEach(h -> {
                         PdfPCell hd = new PdfPCell(new Phrase(h, fontTableHeader));
                         hd.setHorizontalAlignment(Element.ALIGN_CENTER);
