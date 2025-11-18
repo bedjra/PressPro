@@ -27,8 +27,8 @@ public class PressingRequest {
 
     // Getters & Setters
 
-    public String getCel(String cel) {
-        return this.cel;
+    public String getCel() {
+        return cel;
     }
 
     public void setCel(String cel) {

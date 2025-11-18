@@ -40,15 +40,14 @@ public class PressingService {
 
         Pressing pressing = new Pressing();
         pressing.setNom(req.getNom());
-        pressing.setEmail(user.getEmail()); // Email de l’admin
+        pressing.setEmail(user.getEmail());
         pressing.setAdresse(req.getAdresse());
         pressing.setTelephone(req.getTelephone());
-        pressing.setCel(req.getCel(pressing.getCel()));
+        pressing.setCel(req.getCel());
         pressing.setLogo(req.getLogo());
 
         pressingRepository.save(pressing);
 
-        // ⚡ Associer le pressing à l’utilisateur
         user.setPressing(pressing);
         utilisateurRepository.save(user);
 
@@ -62,15 +61,12 @@ public class PressingService {
     public PressingRequest getPressingPourUtilisateur() {
         Utilisateur user = getUtilisateurConnecte();
         Pressing pressing = user.getPressing();
-
         if (pressing == null) {
             throw new RuntimeException("Aucun pressing associé");
         }
-
         return mapToDto(pressing);
     }
 
-    
 
 
 
@@ -88,16 +84,16 @@ public class PressingService {
         return pressings.stream().map(this::mapToDto).toList();
     }
 
-    // 🔹 Mapping Pressing -> DTO
     private PressingRequest mapToDto(Pressing pressing) {
         PressingRequest dto = new PressingRequest();
         dto.setId(pressing.getId());
         dto.setNom(pressing.getNom());
         dto.setAdresse(pressing.getAdresse());
         dto.setTelephone(pressing.getTelephone());
+        dto.setCel(pressing.getCel());       // ✅ Ajout
         dto.setLogo(pressing.getLogo());
-        dto.getCel(pressing.getCel());
         dto.setEmail(pressing.getEmail());
         return dto;
     }
+
 }
