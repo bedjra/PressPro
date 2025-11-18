@@ -139,11 +139,7 @@ public class CommandePdfService {
                     });
 
             Parametre param = commande.getParametre();
-            String description =
-                    param != null ?
-                            param.getArticle() + ((param.getService() != null &&
-                                    !param.getService().isBlank()) ? " / " + param.getService() : "")
-                            : "-";
+            String description = param != null ? param.getArticle() : "-";
 
             double prixUnitaire = param != null ? param.getPrix() : 0.0;
             int qte = commande.getQte();
