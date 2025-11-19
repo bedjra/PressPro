@@ -402,6 +402,7 @@ public class CommandeService {
         dto.setDateLivraison(commande.getDateLivraison());
         dto.setStatut(commande.getStatut());
         dto.setStatutPaiement(commande.getStatutPaiement());
+        dto.setKilo(commande.getKilo());
 
         // --- Client ---
         if (commande.getClient() != null) {
