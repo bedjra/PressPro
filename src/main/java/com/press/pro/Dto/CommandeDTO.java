@@ -21,6 +21,7 @@ public class CommandeDTO {
     private String article;
     private String service;
     private Double prix;
+    private Double kilo;
 
     // Quantité et montants
     private Integer qte;
@@ -44,8 +45,9 @@ public class CommandeDTO {
     private StatutCommande statut;
     private StatutPaiement statutPaiement;
 
-    // ----------------- Getters / Setters -----------------
 
+
+    //----------------- Getters / Setters -----------------
     public Long getId() {
         return id;
     }
@@ -110,6 +112,14 @@ public class CommandeDTO {
         this.prix = prix;
     }
 
+    public Double getKilo() {
+        return kilo;
+    }
+
+    public void setKilo(Double kilo) {
+        this.kilo = kilo;
+    }
+
     public Integer getQte() {
         return qte;
     }
@@ -157,14 +167,6 @@ public class CommandeDTO {
     public void setResteAPayer(Double resteAPayer) {
         this.resteAPayer = resteAPayer;
     }
-
-//    public boolean isExpress() {
-//        return express;
-//    }
-//
-//    public void setExpress(boolean express) {
-//        this.express = express;
-//    }
 
     public LocalDate getDateReception() {
         return dateReception;

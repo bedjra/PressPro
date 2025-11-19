@@ -71,16 +71,26 @@ public class CommandeService {
         Commande commande = fromDto(dto);
         commande.setPressing(user.getPressing());
 
+        // Gestion du kilo et de la quantité
+        if (dto.getKilo() != null) {
+            commande.setKilo(dto.getKilo());
+        }
+
+        if (dto.getQte() != null) {
+            commande.setQte(dto.getQte());
+        }
+
+
         // Lier le client
         Client client = clientRepository.findById(dto.getClientId())
                 .orElseThrow(() -> new RuntimeException("Client introuvable : " + dto.getClientId()));
         commande.setClient(client);
 
-        // ASSIGNATION DES DATES depuis le DTO
+        // Assignation des dates
         commande.setDateReception(dto.getDateReception());
         commande.setDateLivraison(dto.getDateLivraison());
 
-        // Appliquer les paramètres et calculer les montants
+        // Appliquer les paramètres
         if (dto.getParametreId() != null) {
             applyParametreEtMontant(commande, dto.getParametreId());
         }
@@ -99,10 +109,8 @@ public class CommandeService {
             commande.setStatutPaiement(dto.getStatutPaiement());
         }
 
-        // Sauvegarde dans la base
         return commandeRepository.save(commande);
     }
-
 
     // 🔹 Créer la commande et renvoyer directement le PDF
     public ResponseEntity<byte[]> saveCommandeEtTelechargerPdf(CommandeDTO dto) {
@@ -215,29 +223,43 @@ public class CommandeService {
     // 🔹 Conversion Entity -> DTO
     public CommandeDTO toDto(Commande c) {
         CommandeDTO dto = new CommandeDTO();
+
         dto.setId(c.getId());
+
+        // --- Client ---
         if (c.getClient() != null) {
             dto.setClientId(c.getClient().getId());
             dto.setClientNom(c.getClient().getNom());
             dto.setClientTelephone(c.getClient().getTelephone());
         }
+
+        // --- Paramètre ---
         if (c.getParametre() != null) {
             dto.setParametreId(c.getParametre().getId());
             dto.setArticle(c.getParametre().getArticle());
             dto.setService(c.getParametre().getService());
             dto.setPrix(c.getParametre().getPrix());
         }
+
+        // --- Montants et quantités ---
         dto.setQte(c.getQte());
+        dto.setKilo(c.getKilo()); // ✅ ajouter
         dto.setMontantBrut(c.getMontantBrut());
         dto.setRemise(c.getRemise());
         dto.setMontantNet(c.getMontantNet());
+        dto.setMontantPaye(c.getMontantPaye());
+        dto.setResteAPayer(c.getResteAPayer());
+
+        // --- Dates ---
         dto.setDateReception(c.getDateReception());
         dto.setDateLivraison(c.getDateLivraison());
+
+        // --- Statuts ---
         dto.setStatut(c.getStatut());
-        dto.setStatutPaiement(c.getStatutPaiement()); // ✅ ajouté
+        dto.setStatutPaiement(c.getStatutPaiement());
+
         return dto;
     }
-
 
 
     // 🔹 Chiffre d’affaires du jour

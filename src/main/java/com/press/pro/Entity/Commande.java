@@ -29,6 +29,7 @@ public class Commande {
     private Pressing pressing;
 
     private int qte;
+    private Double kilo;
     private double montantBrut;
     private double remise;
     private double montantNet;
@@ -71,48 +72,115 @@ public class Commande {
         return this.montantNet - this.montantPaye;
     }
 
+
+
     // --- Getters & Setters classiques ---
 
+    public Long getId() {
+        return id;
+    }
 
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Client getClient() {
+        return client;
+    }
 
-    public Client getClient() { return client; }
-    public void setClient(Client client) { this.client = client; }
+    public void setClient(Client client) {
+        this.client = client;
+    }
 
-    public Parametre getParametre() { return parametre; }
-    public void setParametre(Parametre parametre) { this.parametre = parametre; }
+    public Parametre getParametre() {
+        return parametre;
+    }
 
-    public Pressing getPressing() { return pressing; }
-    public void setPressing(Pressing pressing) { this.pressing = pressing; }
+    public void setParametre(Parametre parametre) {
+        this.parametre = parametre;
+    }
 
-    public int getQte() { return qte; }
-    public void setQte(int qte) { this.qte = qte; }
+    public Pressing getPressing() {
+        return pressing;
+    }
 
-    public double getMontantBrut() { return montantBrut; }
-    public void setMontantBrut(double montantBrut) { this.montantBrut = montantBrut; }
+    public void setPressing(Pressing pressing) {
+        this.pressing = pressing;
+    }
 
-    public double getRemise() { return remise; }
-    public void setRemise(double remise) { this.remise = remise; }
+    public int getQte() {
+        return qte;
+    }
 
-    public double getMontantNet() { return montantNet; }
-    public void setMontantNet(double montantNet) { this.montantNet = montantNet; }
+    public void setQte(int qte) {
+        this.qte = qte;
+    }
 
-    public StatutCommande getStatut() { return statut; }
-    public void setStatut(StatutCommande statut) { this.statut = statut; }
+    public Double getKilo() {
+        return kilo;
+    }
 
-    public LocalDate getDateReception() { return dateReception; }
-    public void setDateReception(LocalDate dateReception) { this.dateReception = dateReception; }
+    public void setKilo(Double kilo) {
+        this.kilo = kilo;
+    }
 
-    public LocalDate getDateLivraison() { return dateLivraison; }
-    public void setDateLivraison(LocalDate dateLivraison) { this.dateLivraison = dateLivraison; }
+    public double getMontantBrut() {
+        return montantBrut;
+    }
 
+    public void setMontantBrut(double montantBrut) {
+        this.montantBrut = montantBrut;
+    }
 
-    public StatutPaiement getStatutPaiement() { return statutPaiement; }
-    public double getMontantPaye() { return montantPaye; }
+    public double getRemise() {
+        return remise;
+    }
+
+    public void setRemise(double remise) {
+        this.remise = remise;
+    }
+
+    public double getMontantNet() {
+        return montantNet;
+    }
+
+    public void setMontantNet(double montantNet) {
+        this.montantNet = montantNet;
+    }
+
+    public StatutCommande getStatut() {
+        return statut;
+    }
+
+    public void setStatut(StatutCommande statut) {
+        this.statut = statut;
+    }
+
+    public LocalDate getDateReception() {
+        return dateReception;
+    }
+
+    public void setDateReception(LocalDate dateReception) {
+        this.dateReception = dateReception;
+    }
+
+    public LocalDate getDateLivraison() {
+        return dateLivraison;
+    }
+
+    public void setDateLivraison(LocalDate dateLivraison) {
+        this.dateLivraison = dateLivraison;
+    }
+
+    public StatutPaiement getStatutPaiement() {
+        return statutPaiement;
+    }
 
     public void setStatutPaiement(StatutPaiement statutPaiement) {
         this.statutPaiement = statutPaiement;
+    }
+
+    public double getMontantPaye() {
+        return montantPaye;
     }
 }
