@@ -127,9 +127,10 @@ public class CommandeService {
     }
 
     // --- Méthodes utilitaires ---
-    private Commande fromDto(CommandeDTO dto) {
+      private Commande fromDto(CommandeDTO dto) {
         Commande c = new Commande();
-        c.setQte(dto.getQte());
+        c.setQte(dto.getQte() != null ? dto.getQte() : 0);
+        c.setKilo(dto.getKilo() != null ? dto.getKilo() : 0.0);
         c.setRemise(dto.getRemise() != null ? dto.getRemise() : 0);
         c.setMontantBrut(dto.getMontantBrut() != null ? dto.getMontantBrut() : 0);
         c.setMontantNet(dto.getMontantNet() != null ? dto.getMontantNet() : 0);
