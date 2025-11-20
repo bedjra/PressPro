@@ -122,11 +122,12 @@ public class CommandePdfService {
             document.add(Chunk.NEWLINE);
 
             // --- TABLEAU ---
-            PdfPTable table = new PdfPTable(7); // +1 pour Kilo
+            // --- TABLEAU ---
+            PdfPTable table = new PdfPTable(6);  // 6 colonnes (sans Kilo)
             table.setWidthPercentage(100);
-            table.setWidths(new float[]{0.7f, 1f, 3f, 1.1f, 1f, 1.1f, 1.3f});
+            table.setWidths(new float[]{0.7f, 3f, 1.1f, 1f, 1.1f, 1.3f});
 
-            Stream.of("Qté", "Kilo", "Article", "P.U", "Remise", "Net", "Montant")
+            Stream.of("Qté", "Article", "P.U", "Remise", "Net", "Montant")
                     .forEach(h -> {
                         PdfPCell hd = new PdfPCell(new Phrase(h, fontTableHeader));
                         hd.setHorizontalAlignment(Element.ALIGN_CENTER);
@@ -139,12 +140,10 @@ public class CommandePdfService {
             String description = param != null ? param.getArticle() : "-";
             double prixUnitaire = param != null ? param.getPrix() : 0.0;
             int qte = commande.getQte();
-            double kilo = commande.getKilo();
             double remiseTotale = commande.getRemise();
             double montantHT = prixUnitaire * qte;
 
             table.addCell(createCellCenter(String.valueOf(qte), fontTable));
-            table.addCell(createCellRight(String.format("%.2f", kilo), fontTable));
             table.addCell(createCellLeft(description, fontTable));
             table.addCell(createCellRight(String.format("%.0f F", prixUnitaire), fontTable));
             table.addCell(createCellRight(String.format("%.0f F", remiseTotale), fontTable));
@@ -152,6 +151,8 @@ public class CommandePdfService {
             table.addCell(createCellRight(String.format("%.0f F", montantHT), fontTable));
 
             document.add(table);
+
+
 
             // --- TOTAUX ---
             PdfPTable outer = new PdfPTable(2);
