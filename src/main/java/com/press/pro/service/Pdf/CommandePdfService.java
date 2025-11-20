@@ -122,7 +122,7 @@ public class CommandePdfService {
 
             // Ajouter un petit espace avant le tableau
             Paragraph espaceHaut = new Paragraph(" "); // un espace pour que le paragraphe existe
-            espaceHaut.setSpacingBefore(10f);
+            espaceHaut.setSpacingBefore(5f);
             document.add(espaceHaut);
 
             // --- TABLEAU ---
