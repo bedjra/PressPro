@@ -17,8 +17,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 import java.util.stream.Stream;
 
-
-
 @Service
 public class CommandePdfService {
 
@@ -84,8 +82,11 @@ public class CommandePdfService {
             document.add(new LineSeparator());
             document.add(Chunk.NEWLINE);
 
+            // ⭐⭐ NOUVEAU : numéro local du reçu ⭐⭐
+            Long numeroLocal = getNumeroLocal(commande);
+
             Paragraph factureTitle = new Paragraph(
-                    "Reçu N° " + formatNumeroFacture(commande.getId()),
+                    "Reçu N° " + formatNumeroFacture(numeroLocal),
                     fontSousTitre
             );
             factureTitle.setAlignment(Element.ALIGN_CENTER);
@@ -190,14 +191,17 @@ public class CommandePdfService {
             totaux.addCell(ttcValue);
             totaux.addCell(createCellRight("Montant Payé", fontTableHeader));
             totaux.addCell(createCellRight(String.format("%.0f F", montantPaye), fontTable));
+
             PdfPCell resteLabel = new PdfPCell(new Phrase("Reste à Payer", fontTableHeader));
             resteLabel.setHorizontalAlignment(Element.ALIGN_LEFT);
             resteLabel.setPadding(4f);
             resteLabel.setBackgroundColor(BaseColor.YELLOW);
+
             PdfPCell resteValue = new PdfPCell(new Phrase(String.format("%.0f F", resteAPayer), fontMontant));
             resteValue.setHorizontalAlignment(Element.ALIGN_RIGHT);
             resteValue.setPadding(4f);
             resteValue.setBackgroundColor(BaseColor.YELLOW);
+
             totaux.addCell(resteLabel);
             totaux.addCell(resteValue);
 
@@ -226,6 +230,15 @@ public class CommandePdfService {
         }
 
         return out.toByteArray();
+    }
+
+    // ⭐⭐ NOUVEAU : génère un numéro de reçu par pressing ⭐⭐
+    private long getNumeroLocal(Commande commande) {
+        Pressing pressing = commande.getPressing();
+        return pressing.getCommandes()
+                .stream()
+                .filter(c -> c.getId() <= commande.getId())
+                .count();
     }
 
     // --- Méthodes utilitaires de cellule et format ---

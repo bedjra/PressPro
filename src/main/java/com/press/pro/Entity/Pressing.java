@@ -2,6 +2,9 @@ package com.press.pro.Entity;
 
 import jakarta.persistence.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 @Entity
 public class Pressing {
@@ -19,6 +22,17 @@ public class Pressing {
     // ⚡ Ajout de fetch lazy pour éviter les doublons
     @OneToOne(mappedBy = "pressing", fetch = FetchType.LAZY)
     private Utilisateur admin;
+
+    @OneToMany(mappedBy = "pressing", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Commande> commandes = new ArrayList<>();
+
+    public List<Commande> getCommandes() {
+        return commandes;
+    }
+
+    public void setCommandes(List<Commande> commandes) {
+        this.commandes = commandes;
+    }
 
     public Pressing() {}
 
