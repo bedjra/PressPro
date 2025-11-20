@@ -120,11 +120,10 @@ public class CommandePdfService {
             topInfo.addCell(right);
             document.add(topInfo);
 
-// Ajouter un petit espace avant le tableau
-            Paragraph espace = new Paragraph();
-            espace.setSpacingAfter(5f); // espace vertical de 5 points seulement
-            document.add(espace);
-            
+            // Ajouter un petit espace avant le tableau
+            Paragraph espaceHaut = new Paragraph(" "); // un espace pour que le paragraphe existe
+            espaceHaut.setSpacingBefore(10f);
+            document.add(espaceHaut);
 
             // --- TABLEAU ---
             PdfPTable table = new PdfPTable(6);  // 6 colonnes (sans Kilo)
