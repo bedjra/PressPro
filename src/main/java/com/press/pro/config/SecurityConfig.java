@@ -75,7 +75,8 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(Arrays.asList(
                 "http://localhost:8080",   // Ton frontend actuel
                 "http://localhost:5173",   // Vite par défaut
-                "http://localhost:3000"    // React/Next.js par défaut
+                "http://localhost:3000",
+                "https://press-pro.vercel.app"  // Frontend déployé
         ));
 
         // 📡 Méthodes HTTP autorisées
