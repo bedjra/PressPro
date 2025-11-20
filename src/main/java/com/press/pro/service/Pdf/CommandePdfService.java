@@ -155,6 +155,7 @@ public class CommandePdfService {
 
 
             // --- TOTAUX ---
+            // --- TOTAUX ---
             PdfPTable outer = new PdfPTable(2);
             outer.setWidthPercentage(100);
             outer.setWidths(new float[]{1.3f, 1f});
@@ -173,11 +174,15 @@ public class CommandePdfService {
             double montantPaye = commande.getMontantPaye();
             double resteAPayer = montantTTC - montantPaye;
 
+// Remise
             totaux.addCell(createCellRight("Remise", fontTableHeader));
             totaux.addCell(createCellRight(String.format("%.0f F", remiseTotale), fontTable));
+
+// Net Commercial
             totaux.addCell(createCellRight("Net Commercial", fontTableHeader));
             totaux.addCell(createCellRight(String.format("%.0f F", netCommercial), fontTable));
 
+// Montant TTC
             PdfPCell ttcLabel = new PdfPCell(new Phrase("Montant TTC", fontTableHeader));
             ttcLabel.setHorizontalAlignment(Element.ALIGN_LEFT);
             ttcLabel.setPadding(4f);
@@ -190,18 +195,21 @@ public class CommandePdfService {
 
             totaux.addCell(ttcLabel);
             totaux.addCell(ttcValue);
+
+// Montant payé
             totaux.addCell(createCellRight("Montant Payé", fontTableHeader));
             totaux.addCell(createCellRight(String.format("%.0f F", montantPaye), fontTable));
 
+// Reste à payer (en jaune)
             PdfPCell resteLabel = new PdfPCell(new Phrase("Reste à Payer", fontTableHeader));
             resteLabel.setHorizontalAlignment(Element.ALIGN_LEFT);
             resteLabel.setPadding(4f);
-            resteLabel.setBackgroundColor(BaseColor.YELLOW);
+            resteLabel.setBackgroundColor(BaseColor.WHITE);
 
             PdfPCell resteValue = new PdfPCell(new Phrase(String.format("%.0f F", resteAPayer), fontMontant));
             resteValue.setHorizontalAlignment(Element.ALIGN_RIGHT);
             resteValue.setPadding(4f);
-            resteValue.setBackgroundColor(BaseColor.YELLOW);
+            resteValue.setBackgroundColor(BaseColor.WHITE);
 
             totaux.addCell(resteLabel);
             totaux.addCell(resteValue);
@@ -209,7 +217,9 @@ public class CommandePdfService {
             PdfPCell totauxCell = new PdfPCell(totaux);
             totauxCell.setBorder(Rectangle.NO_BORDER);
             outer.addCell(totauxCell);
+
             document.add(outer);
+
 
             Paragraph signature = new Paragraph("Signature", fontInfo);
             signature.setAlignment(Element.ALIGN_RIGHT);
