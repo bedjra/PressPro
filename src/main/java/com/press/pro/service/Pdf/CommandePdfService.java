@@ -122,7 +122,6 @@ public class CommandePdfService {
             document.add(Chunk.NEWLINE);
 
             // --- TABLEAU ---
-            // --- TABLEAU ---
             PdfPTable table = new PdfPTable(6);  // 6 colonnes (sans Kilo)
             table.setWidthPercentage(100);
             table.setWidths(new float[]{0.7f, 3f, 1.1f, 1f, 1.1f, 1.3f});
@@ -155,11 +154,13 @@ public class CommandePdfService {
 
 
             // --- TOTAUX ---
-            // --- TOTAUX ---
             PdfPTable outer = new PdfPTable(2);
             outer.setWidthPercentage(100);
             outer.setWidths(new float[]{1.3f, 1f});
             outer.getDefaultCell().setBorder(Rectangle.NO_BORDER);
+
+            // Ajouter un peu d'espace au-dessus
+            outer.setSpacingBefore(10f);
 
             PdfPCell empty = new PdfPCell(new Phrase(""));
             empty.setBorder(Rectangle.NO_BORDER);
@@ -182,43 +183,50 @@ public class CommandePdfService {
             totaux.addCell(createCellRight("Net Commercial", fontTableHeader));
             totaux.addCell(createCellRight(String.format("%.0f F", netCommercial), fontTable));
 
-// Montant TTC
+            // Montant TTC (sans bordure)
             PdfPCell ttcLabel = new PdfPCell(new Phrase("Montant TTC", fontTableHeader));
             ttcLabel.setHorizontalAlignment(Element.ALIGN_LEFT);
             ttcLabel.setPadding(4f);
             ttcLabel.setBackgroundColor(BaseColor.LIGHT_GRAY);
+            ttcLabel.setBorder(Rectangle.NO_BORDER); // supprime la bordure
 
             PdfPCell ttcValue = new PdfPCell(new Phrase(String.format("%.0f F", montantTTC), fontMontant));
             ttcValue.setHorizontalAlignment(Element.ALIGN_RIGHT);
             ttcValue.setPadding(4f);
             ttcValue.setBackgroundColor(BaseColor.LIGHT_GRAY);
+            ttcValue.setBorder(Rectangle.NO_BORDER); // supprime la bordure
 
             totaux.addCell(ttcLabel);
             totaux.addCell(ttcValue);
+
 
 // Montant payé
             totaux.addCell(createCellRight("Montant Payé", fontTableHeader));
             totaux.addCell(createCellRight(String.format("%.0f F", montantPaye), fontTable));
 
-// Reste à payer (en jaune)
+            // Reste à payer
             PdfPCell resteLabel = new PdfPCell(new Phrase("Reste à Payer", fontTableHeader));
             resteLabel.setHorizontalAlignment(Element.ALIGN_LEFT);
             resteLabel.setPadding(4f);
             resteLabel.setBackgroundColor(BaseColor.WHITE);
+            resteLabel.setBorder(Rectangle.NO_BORDER); // supprime la bordure
 
             PdfPCell resteValue = new PdfPCell(new Phrase(String.format("%.0f F", resteAPayer), fontMontant));
             resteValue.setHorizontalAlignment(Element.ALIGN_RIGHT);
             resteValue.setPadding(4f);
             resteValue.setBackgroundColor(BaseColor.WHITE);
+            resteValue.setBorder(Rectangle.NO_BORDER); // supprime la bordure
 
             totaux.addCell(resteLabel);
             totaux.addCell(resteValue);
 
+// Ajouter le tableau des totaux dans le tableau extérieur
             PdfPCell totauxCell = new PdfPCell(totaux);
-            totauxCell.setBorder(Rectangle.NO_BORDER);
+            totauxCell.setBorder(Rectangle.NO_BORDER); // supprime aussi la bordure du conteneur
             outer.addCell(totauxCell);
 
             document.add(outer);
+
 
 
             Paragraph signature = new Paragraph("Signature", fontInfo);
