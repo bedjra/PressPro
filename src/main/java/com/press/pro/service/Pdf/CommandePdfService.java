@@ -175,14 +175,6 @@ public class CommandePdfService {
             double montantPaye = commande.getMontantPaye();
             double resteAPayer = montantTTC - montantPaye;
 
-// Remise
-            totaux.addCell(createCellRight("Remise", fontTableHeader));
-            totaux.addCell(createCellRight(String.format("%.0f F", remiseTotale), fontTable));
-
-// Net Commercial
-            totaux.addCell(createCellRight("Net Commercial", fontTableHeader));
-            totaux.addCell(createCellRight(String.format("%.0f F", netCommercial), fontTable));
-
             // Montant TTC (sans bordure)
             PdfPCell ttcLabel = new PdfPCell(new Phrase("Montant TTC", fontTableHeader));
             ttcLabel.setHorizontalAlignment(Element.ALIGN_LEFT);
@@ -194,18 +186,17 @@ public class CommandePdfService {
             ttcValue.setHorizontalAlignment(Element.ALIGN_RIGHT);
             ttcValue.setPadding(4f);
             ttcValue.setBackgroundColor(BaseColor.LIGHT_GRAY);
-            ttcValue.setBorder(Rectangle.NO_BORDER); // supprime la bordure
+            ttcValue.setBorder(Rectangle.NO_BORDER);
 
             totaux.addCell(ttcLabel);
             totaux.addCell(ttcValue);
-
 
 // Montant payé
             totaux.addCell(createCellRight("Montant Payé", fontTableHeader));
             totaux.addCell(createCellRight(String.format("%.0f F", montantPaye), fontTable));
 
             // Reste à payer
-            PdfPCell resteLabel = new PdfPCell(new Phrase("Reste à Payer", fontTableHeader));
+            PdfPCell resteLabel = new PdfPCell(new Phrase("Reste ", fontTableHeader));
             resteLabel.setHorizontalAlignment(Element.ALIGN_LEFT);
             resteLabel.setPadding(4f);
             resteLabel.setBackgroundColor(BaseColor.WHITE);
