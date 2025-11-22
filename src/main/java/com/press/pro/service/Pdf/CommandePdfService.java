@@ -175,9 +175,9 @@ public class CommandePdfService {
             double montantPaye = commande.getMontantPaye();
             double resteAPayer = montantTTC - montantPaye;
 
-            // Montant HT (pas TTC comme dans le commentaire)
-            totaux.addCell(createCellLeftWithBg("Montant HT", fontTableHeader, BaseColor.LIGHT_GRAY));
-            totaux.addCell(createCellRightWithBg(String.format("%.0f F", montant), fontMontant, BaseColor.LIGHT_GRAY));
+            // Montant HT
+            totaux.addCell(createCellLeftWithBg("Montant HT", fontTable, BaseColor.LIGHT_GRAY));
+            totaux.addCell(createCellRightWithBg(String.format("%.0f F", montantTTC), fontTable, BaseColor.LIGHT_GRAY));
 
 // Montant payé
             totaux.addCell(createCellLeft("Montant Payé", fontTable));

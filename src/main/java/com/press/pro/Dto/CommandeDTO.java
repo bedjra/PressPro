@@ -1,6 +1,7 @@
 package com.press.pro.Dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.press.pro.enums.StatutCommande;
 import com.press.pro.enums.StatutPaiement;
 import jakarta.validation.constraints.NotNull;
@@ -30,9 +31,8 @@ public class CommandeDTO {
     private Double montantNet;
 
     // Montants payés et reste à payer
-    private Double montantPaye;    // montant déjà versé
-    private Double resteAPayer;    // calculé = montantNet - montantPaye
-
+    private Double montantPaye;
+    private Double resteAPayer;
 
     @NotNull(message = "La date de réception est obligatoire")
     @JsonFormat(pattern = "yyyy-MM-dd")
@@ -41,11 +41,17 @@ public class CommandeDTO {
     @NotNull(message = "La date de livraison est obligatoire")
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate dateLivraison;
+
     // Statuts
     private StatutCommande statut;
     private StatutPaiement statutPaiement;
 
+    // ✅ Champs pour la facturation par kilogramme
+    @JsonProperty("isTypeKilogramme")
+    private Boolean typeKilogramme;
 
+    private String serviceKilo;
+    private Double prixParKg;
 
     //----------------- Getters / Setters -----------------
     public Long getId() {
@@ -198,5 +204,30 @@ public class CommandeDTO {
 
     public void setStatutPaiement(StatutPaiement statutPaiement) {
         this.statutPaiement = statutPaiement;
+    }
+
+    // ✅ Getters/Setters pour les champs kilogramme
+    public Boolean getTypeKilogramme() {
+        return typeKilogramme;
+    }
+
+    public void setTypeKilogramme(Boolean typeKilogramme) {
+        this.typeKilogramme = typeKilogramme;
+    }
+
+    public String getServiceKilo() {
+        return serviceKilo;
+    }
+
+    public void setServiceKilo(String serviceKilo) {
+        this.serviceKilo = serviceKilo;
+    }
+
+    public Double getPrixParKg() {
+        return prixParKg;
+    }
+
+    public void setPrixParKg(Double prixParKg) {
+        this.prixParKg = prixParKg;
     }
 }

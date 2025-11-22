@@ -21,7 +21,6 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
 import java.util.*;
-
 @Service
 public class CommandeService {
 
@@ -35,8 +34,7 @@ public class CommandeService {
     private ParametreRepository parametreRepository;
 
     @Autowired
-    private ChargeRepository chargeRepository;
-
+    private KiloRepository kiloRepository; // ✅ Ajout
 
     @Autowired
     private UtilisateurRepository utilisateurRepository;
@@ -65,21 +63,15 @@ public class CommandeService {
             throw new RuntimeException("Le client est obligatoire");
         }
 
-        Utilisateur user = getUserConnecte();
+        // ✅ DEBUG: Afficher le type reçu
+        System.out.println("DEBUG - typeKilogramme reçu: " + dto.getTypeKilogramme());
+        System.out.println("DEBUG - kilo: " + dto.getKilo());
+        System.out.println("DEBUG - prixParKg: " + dto.getPrixParKg());
+        System.out.println("DEBUG - parametreId: " + dto.getParametreId());
 
-        // Conversion DTO -> Entity
+        Utilisateur user = getUserConnecte();
         Commande commande = fromDto(dto);
         commande.setPressing(user.getPressing());
-
-        // Gestion du kilo et de la quantité
-        if (dto.getKilo() != null) {
-            commande.setKilo(dto.getKilo());
-        }
-
-        if (dto.getQte() != null) {
-            commande.setQte(dto.getQte());
-        }
-
 
         // Lier le client
         Client client = clientRepository.findById(dto.getClientId())
@@ -87,11 +79,23 @@ public class CommandeService {
         commande.setClient(client);
 
         // Assignation des dates
-        commande.setDateReception(dto.getDateReception());
-        commande.setDateLivraison(dto.getDateLivraison());
+        commande.setDateReception(dto.getDateReception() != null ? dto.getDateReception() : LocalDate.now());
+        commande.setDateLivraison(dto.getDateLivraison() != null ? dto.getDateLivraison() : LocalDate.now().plusDays(3));
 
-        // Appliquer les paramètres
-        if (dto.getParametreId() != null) {
+        // ✅ **Logique de facturation selon le type**
+        if (Boolean.TRUE.equals(dto.getTypeKilogramme())) {
+            System.out.println("DEBUG - Mode KILOGRAMME détecté");
+            // 🔹 MODE KILOGRAMME
+            applyFacturationKilogramme(commande, dto);
+        } else {
+            System.out.println("DEBUG - Mode ARTICLE détecté");
+            // 🔹 MODE ARTICLE (classique)
+            if (dto.getParametreId() == null) {
+                throw new RuntimeException("L'article et le service sont obligatoires en mode Article");
+            }
+            if (dto.getQte() == null || dto.getQte() == 0) {
+                commande.setQte(1); // Quantité par défaut
+            }
             applyParametreEtMontant(commande, dto.getParametreId());
         }
 
@@ -107,41 +111,95 @@ public class CommandeService {
 
         if (dto.getStatutPaiement() != null) {
             commande.setStatutPaiement(dto.getStatutPaiement());
+        } else {
+            // Déterminer automatiquement le statut de paiement
+            if (montantPaye == 0) {
+                commande.setStatutPaiement(StatutPaiement.NON_PAYE);
+            } else if (montantPaye >= commande.getMontantNet()) {
+                commande.setStatutPaiement(StatutPaiement.PAYE);
+            } else {
+                commande.setStatutPaiement(StatutPaiement.PARTIELLEMENT_PAYE);
+            }
         }
 
         return commandeRepository.save(commande);
+    }
+
+    // ✅ **Nouvelle méthode : Facturation par kilogramme**
+    private void applyFacturationKilogramme(Commande commande, CommandeDTO dto) {
+        // Validation du poids
+        if (dto.getKilo() == null || dto.getKilo() <= 0) {
+            throw new RuntimeException("Le poids (en kg) est obligatoire et doit être supérieur à 0");
+        }
+
+        // Validation du prix par kg
+        if (dto.getPrixParKg() == null || dto.getPrixParKg() <= 0) {
+            throw new RuntimeException("Le prix par kg est obligatoire et doit être supérieur à 0");
+        }
+
+        // Stocker les informations
+        commande.setKilo(dto.getKilo());
+        commande.setQte(0); // Pas de quantité en mode kilogramme
+
+        // Stocker le service et le prix par kg
+        commande.setServiceKilo(dto.getServiceKilo());
+        commande.setPrixParKg(dto.getPrixParKg());
+        commande.setTypeFacturation("KILOGRAMME");
+
+        // Calculer le montant brut : poids × prix par kg
+        double montantBrut = dto.getKilo() * dto.getPrixParKg();
+        commande.setMontantBrut(Math.round(montantBrut * 100.0) / 100.0);
+
+        // ✅ NE PAS lier de paramètre en mode kilogramme
+        commande.setParametre(null);
+    }
+
+    // 🔹 Appliquer paramètre (MODE ARTICLE)
+    private void applyParametreEtMontant(Commande c, Long parametreId) {
+        Parametre param = parametreRepository.findById(parametreId)
+                .orElseThrow(() -> new RuntimeException("Paramètre introuvable : " + parametreId));
+
+        c.setParametre(param);
+        c.setKilo(0.0);
+        c.setTypeFacturation("ARTICLE");
+
+        if (c.getQte() == null || c.getQte() == 0) {
+            c.setQte(1);
+        }
+
+        c.setMontantBrut(param.getPrix() * c.getQte());
+    }
+
+    // 🔹 Appliquer remise et net
+    private void applyRemiseEtNet(Commande c, Double remise) {
+        c.setRemise(remise != null ? remise : 0.0);
+        c.setMontantNet(c.getMontantBrut() - c.getRemise());
+    }
+
+    // 🔹 Conversion DTO -> Entity
+    private Commande fromDto(CommandeDTO dto) {
+        Commande c = new Commande();
+        c.setQte(dto.getQte() != null ? dto.getQte() : 0);
+        c.setKilo(dto.getKilo() != null ? dto.getKilo() : 0.0);
+        c.setRemise(dto.getRemise() != null ? dto.getRemise() : 0.0);
+        c.setMontantBrut(dto.getMontantBrut() != null ? dto.getMontantBrut() : 0.0);
+        c.setMontantNet(dto.getMontantNet() != null ? dto.getMontantNet() : 0.0);
+        return c;
     }
 
     // 🔹 Créer la commande et renvoyer directement le PDF
     public ResponseEntity<byte[]> saveCommandeEtTelechargerPdf(CommandeDTO dto) {
         Commande savedCommande = saveCommandeEntity(dto);
 
-        // Génération du PDF
         byte[] pdf = commandePdfService.genererCommandePdf(savedCommande);
 
-        // Retour HTTP pour téléchargement direct
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=commande_" + savedCommande.getId() + ".pdf")
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(pdf);
     }
 
-    // --- Méthodes utilitaires ---
-      private Commande fromDto(CommandeDTO dto) {
-        Commande c = new Commande();
-        c.setQte(dto.getQte() != null ? dto.getQte() : 0);
-        c.setKilo(dto.getKilo() != null ? dto.getKilo() : 0.0);
-        c.setRemise(dto.getRemise() != null ? dto.getRemise() : 0);
-        c.setMontantBrut(dto.getMontantBrut() != null ? dto.getMontantBrut() : 0);
-        c.setMontantNet(dto.getMontantNet() != null ? dto.getMontantNet() : 0);
-        return c;
-    }
-
-
-
-
-
-
+    // 🔹 Mise à jour d'une commande
     public CommandeDTO updateCommande(Long id, CommandeDTO dto) {
         Utilisateur user = getUserConnecte();
 
@@ -151,26 +209,64 @@ public class CommandeService {
         if (!commande.getPressing().getId().equals(user.getPressing().getId()))
             throw new RuntimeException("Accès refusé : cette commande appartient à un autre pressing");
 
-        if (dto.getQte() != null) commande.setQte(dto.getQte());
-        if (dto.getParametreId() != null) applyParametreEtMontant(commande, dto.getParametreId());
+        // ✅ Mise à jour selon le type de facturation
+        if (Boolean.TRUE.equals(dto.getTypeKilogramme())) {
+            // MODE KILOGRAMME
+            if (dto.getKilo() != null && dto.getKilo() > 0) {
+                commande.setKilo(dto.getKilo());
+            }
+            if (dto.getPrixParKg() != null && dto.getPrixParKg() > 0) {
+                commande.setPrixParKg(dto.getPrixParKg());
+                double montantBrut = commande.getKilo() * dto.getPrixParKg();
+                commande.setMontantBrut(Math.round(montantBrut * 100.0) / 100.0);
+            }
+            if (dto.getServiceKilo() != null) {
+                commande.setServiceKilo(dto.getServiceKilo());
+            }
+            commande.setQte(0);
+            commande.setParametre(null);
+        } else {
+            // MODE ARTICLE
+            if (dto.getQte() != null && dto.getQte() > 0) {
+                commande.setQte(dto.getQte());
+            }
+            if (dto.getParametreId() != null) {
+                applyParametreEtMontant(commande, dto.getParametreId());
+            }
+            commande.setKilo(0.0);
+            commande.setServiceKilo(null);
+            commande.setPrixParKg(null);
+        }
+
+        // Appliquer remise et net
         applyRemiseEtNet(commande, dto.getRemise() != null ? dto.getRemise() : commande.getRemise());
 
+        // Mise à jour des dates
         if (dto.getDateReception() != null)
             commande.setDateReception(dto.getDateReception());
 
+        if (dto.getDateLivraison() != null)
+            commande.setDateLivraison(dto.getDateLivraison());
+
+        // Mise à jour des statuts
         if (dto.getStatut() != null)
             commande.setStatut(dto.getStatut());
 
         if (dto.getStatutPaiement() != null)
             commande.setStatutPaiement(dto.getStatutPaiement());
 
-        // 🔄 Sauvegarde
+        // Mise à jour du paiement
+        if (dto.getMontantPaye() != null) {
+            commande.setMontantPaye(dto.getMontantPaye());
+        }
+
+        // Sauvegarde
         commandeRepository.save(commande);
 
-        // 🟦 Conversion en DTO
+        // Conversion en DTO
         CommandeDTO resultat = toDto(commande);
 
-        // 🔄 Calcul du reste à payer dans le DTO (pas dans l'entité)
+        // Calcul du reste à payer
         if (resultat.getMontantNet() != null && resultat.getMontantPaye() != null) {
             double reste = resultat.getMontantNet() - resultat.getMontantPaye();
             resultat.setResteAPayer(Math.max(reste, 0));
@@ -178,48 +274,6 @@ public class CommandeService {
 
         return resultat;
     }
-
-
-    // 🔹 Méthodes utilitaires
-    private void applyParametreEtMontant(Commande c, Long parametreId) {
-        Parametre param = parametreRepository.findById(parametreId)
-                .orElseThrow(() -> new RuntimeException("Paramètre introuvable : " + parametreId));
-        c.setParametre(param);
-        c.setMontantBrut(param.getPrix() * c.getQte());
-    }
-
-    private void applyRemiseEtNet(Commande c, Double remise) {
-        c.setRemise(remise != null ? remise : 0.0);
-        c.setMontantNet(c.getMontantBrut() - c.getRemise());
-    }
-
-    private void applyDates(Commande c, boolean express, LocalDate dateReception) {
-        LocalDate reception = dateReception != null ? dateReception : LocalDate.now();
-        c.setDateReception(reception);
-        c.setDateLivraison(express ? reception.plusDays(1) : reception.plusDays(3));
-    }
-
-
-
-    // 🔹 Récupération de toutes les commandes du pressing connecté
-    public List<CommandeDTO> getAllCommandes() {
-        Utilisateur user = getUserConnecte();
-        return commandeRepository.findAllByPressing(user.getPressing())
-                .stream().map(this::toDto).toList();
-    }
-
-    // 🔹 Génération PDF pour une commande existante
-    public ResponseEntity<byte[]> telechargerCommandePdf(Long id) {
-        Commande commande = commandeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Commande introuvable : " + id));
-
-        byte[] pdf = commandePdfService.genererCommandePdf(commande);
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=commande_" + id + ".pdf")
-                .contentType(MediaType.APPLICATION_PDF)
-                .body(pdf);
-    }
-
 
     // 🔹 Conversion Entity -> DTO
     public CommandeDTO toDto(Commande c) {
@@ -234,7 +288,7 @@ public class CommandeService {
             dto.setClientTelephone(c.getClient().getTelephone());
         }
 
-        // --- Paramètre ---
+        // --- Paramètre (uniquement en mode Article) ---
         if (c.getParametre() != null) {
             dto.setParametreId(c.getParametre().getId());
             dto.setArticle(c.getParametre().getArticle());
@@ -244,7 +298,7 @@ public class CommandeService {
 
         // --- Montants et quantités ---
         dto.setQte(c.getQte());
-        dto.setKilo(c.getKilo()); // ✅ ajouter
+        dto.setKilo(c.getKilo());
         dto.setMontantBrut(c.getMontantBrut());
         dto.setRemise(c.getRemise());
         dto.setMontantNet(c.getMontantNet());
@@ -259,11 +313,52 @@ public class CommandeService {
         dto.setStatut(c.getStatut());
         dto.setStatutPaiement(c.getStatutPaiement());
 
+        // ✅ Déterminer le type de facturation
+        // Si kilo > 0 et qte == 0, c'est une facturation au kilogramme
+        boolean isKiloMode = c.getKilo() != null && c.getKilo() > 0 &&
+                (c.getQte() == null || c.getQte() == 0);
+        dto.setTypeKilogramme(isKiloMode);
+
+        // Si mode kilogramme, récupérer le service et prix par kg
+        if (isKiloMode) {
+            dto.setServiceKilo(c.getServiceKilo());
+            dto.setPrixParKg(c.getPrixParKg());
+        }
+
         return dto;
     }
 
+    // 🔹 Récupération de toutes les commandes
+    public List<CommandeDTO> getAllCommandes() {
+        Utilisateur user = getUserConnecte();
+        return commandeRepository.findAllByPressing(user.getPressing())
+                .stream().map(this::toDto).toList();
+    }
 
-    // 🔹 Chiffre d’affaires du jour
+    // 🔹 Génération PDF
+    public ResponseEntity<byte[]> telechargerCommandePdf(Long id) {
+        Commande commande = commandeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Commande introuvable : " + id));
+
+        byte[] pdf = commandePdfService.genererCommandePdf(commande);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=commande_" + id + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
+
+    // 🔹 Récupérer une commande par ID
+    public CommandeDTO getCommandeById(Long id) {
+        Utilisateur user = getUserConnecte();
+
+        Commande commande = commandeRepository
+                .findDistinctByIdAndPressingId(id, user.getPressing().getId())
+                .orElseThrow(() -> new RuntimeException("Commande introuvable ou accès refusé : " + id));
+
+        return toDto(commande);
+    }
+
+    // 🔹 Chiffre d'affaires journalier
     public Double getCAJournalier() {
         Utilisateur user = getUserConnecte();
         LocalDate today = LocalDate.now();
@@ -273,49 +368,40 @@ public class CommandeService {
                 .orElse(0.0);
     }
 
-    // 🔹 Chiffre d’affaires hebdomadaire
+    // 🔹 Chiffre d'affaires hebdomadaire
     public Double getCAHebdomadaire() {
         Utilisateur user = getUserConnecte();
         LocalDate debut = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
         LocalDate fin = LocalDate.now().with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
 
-        Double caBrut = commandeRepository
+        return Math.round(commandeRepository
                 .sumMontantNetBetweenDatesAndPressing(debut, fin, user.getPressing().getId())
-                .orElse(0.0);
-
-        return Math.round(caBrut * 100.0) / 100.0;
+                .orElse(0.0) * 100.0) / 100.0;
     }
 
-    // 🔹 Chiffre d’affaires mensuel
+    // 🔹 Chiffre d'affaires mensuel
     public Double getCAMensuel() {
         Utilisateur user = getUserConnecte();
         LocalDate debut = LocalDate.now().withDayOfMonth(1);
         LocalDate fin = LocalDate.now().withDayOfMonth(LocalDate.now().lengthOfMonth());
 
-        Double caBrut = commandeRepository
+        return Math.round(commandeRepository
                 .sumMontantNetBetweenDatesAndPressing(debut, fin, user.getPressing().getId())
-                .orElse(0.0);
-
-        return Math.round(caBrut * 100.0) / 100.0;
+                .orElse(0.0) * 100.0) / 100.0;
     }
 
-    // 🔹 Chiffre d’affaires annuel
+    // 🔹 Chiffre d'affaires annuel
     public Double getCAAnnuel() {
         Utilisateur user = getUserConnecte();
         LocalDate debut = LocalDate.now().withDayOfYear(1);
         LocalDate fin = LocalDate.now().with(TemporalAdjusters.lastDayOfYear());
 
-        Double caBrut = commandeRepository
+        return Math.round(commandeRepository
                 .sumMontantNetBetweenDatesAndPressing(debut, fin, user.getPressing().getId())
-                .orElse(0.0);
-
-        return Math.round(caBrut * 100.0) / 100.0;
+                .orElse(0.0) * 100.0) / 100.0;
     }
 
-
-
-
-
+    // 🔹 Total impayés
     public Double getTotalImpayes() {
         Utilisateur user = getUserConnecte();
         return commandeRepository.sumResteAPayerByPressingAndStatutPaiement(
@@ -324,10 +410,7 @@ public class CommandeService {
         ).orElse(0.0);
     }
 
-
-
-
-    // 🔹 Changer le statut d'une commande
+    // 🔹 Changer le statut avec paiement
     public CommandeDTO updateStatutCommandeAvecPaiement(Long commandeId,
                                                         StatutCommande nouveauStatut,
                                                         double montantActuel) {
@@ -337,97 +420,15 @@ public class CommandeService {
                 .findDistinctByIdAndPressingId(commandeId, user.getPressing().getId())
                 .orElseThrow(() -> new RuntimeException("Commande introuvable ou accès refusé : " + commandeId));
 
-        // 🔹 Mettre à jour le statut
         commande.setStatut(nouveauStatut);
 
-        // 🔹 Ajouter le paiement partiel
         if (montantActuel > 0) {
             double nouveauMontantPaye = commande.getMontantPaye() + montantActuel;
             commande.setMontantPaye(nouveauMontantPaye);
         }
 
-        // 🔹 Sauvegarde
         Commande saved = commandeRepository.save(commande);
-
-        // 🔹 Conversion DTO complète (comme getCommandeById)
-        CommandeDTO dto = new CommandeDTO();
-        dto.setId(saved.getId());
-        dto.setDateReception(saved.getDateReception());
-        dto.setDateLivraison(saved.getDateLivraison());
-        dto.setStatut(saved.getStatut());
-        dto.setStatutPaiement(saved.getStatutPaiement());
-
-        // --- Client ---
-        if (saved.getClient() != null) {
-            dto.setClientId(saved.getClient().getId());
-            dto.setClientNom(saved.getClient().getNom());
-            dto.setClientTelephone(saved.getClient().getTelephone());
-        }
-
-        // --- Paramètre ---
-        if (saved.getParametre() != null) {
-            dto.setParametreId(saved.getParametre().getId());
-            dto.setArticle(saved.getParametre().getArticle());
-            dto.setService(saved.getParametre().getService());
-            dto.setPrix(saved.getParametre().getPrix());
-        }
-
-        // --- Montants ---
-        dto.setQte(saved.getQte());
-        dto.setMontantBrut(saved.getMontantBrut());
-        dto.setRemise(saved.getRemise());
-        dto.setMontantNet(saved.getMontantNet());
-        dto.setMontantPaye(saved.getMontantPaye());
-        dto.setResteAPayer(saved.getResteAPayer());
-
-        return dto;
-    }
-
-
-    public CommandeDTO getCommandeById(Long id) {
-        // 🔹 Récupération de l'utilisateur connecté
-        Utilisateur user = getUserConnecte();
-
-        // 🔹 Recherche de la commande dans le pressing du user
-        Commande commande = commandeRepository
-                .findDistinctByIdAndPressingId(id, user.getPressing().getId())
-                .orElseThrow(() -> new RuntimeException("Commande introuvable ou accès refusé : " + id));
-
-        // 🔹 Conversion Entity -> DTO
-        CommandeDTO dto = new CommandeDTO();
-
-        // --- Informations principales ---
-        dto.setId(commande.getId());
-        dto.setDateReception(commande.getDateReception());
-        dto.setDateLivraison(commande.getDateLivraison());
-        dto.setStatut(commande.getStatut());
-        dto.setStatutPaiement(commande.getStatutPaiement());
-        dto.setKilo(commande.getKilo());
-
-        // --- Client ---
-        if (commande.getClient() != null) {
-            dto.setClientId(commande.getClient().getId());
-            dto.setClientNom(commande.getClient().getNom());
-            dto.setClientTelephone(commande.getClient().getTelephone());
-        }
-
-        // --- Paramètre (article, service, prix) ---
-        if (commande.getParametre() != null) {
-            dto.setParametreId(commande.getParametre().getId());
-            dto.setArticle(commande.getParametre().getArticle());
-            dto.setService(commande.getParametre().getService());
-            dto.setPrix(commande.getParametre().getPrix());
-        }
-
-        // --- Montants ---
-        dto.setQte(commande.getQte());
-        dto.setMontantBrut(commande.getMontantBrut());
-        dto.setRemise(commande.getRemise());
-        dto.setMontantNet(commande.getMontantNet());
-        dto.setMontantPaye(commande.getMontantPaye());
-        dto.setResteAPayer(commande.getResteAPayer());
-
-        return dto;
+        return toDto(saved);
     }
 
 
