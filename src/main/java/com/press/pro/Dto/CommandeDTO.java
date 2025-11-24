@@ -21,7 +21,7 @@ public class CommandeDTO {
     private String article;
     private String service;
     private Double prix;
-    private Double kilo;
+//    private Double kilo;
 
     // Quantité et montants
     private Integer qte;
@@ -111,14 +111,14 @@ public class CommandeDTO {
     public void setPrix(Double prix) {
         this.prix = prix;
     }
-
-    public Double getKilo() {
-        return kilo;
-    }
-
-    public void setKilo(Double kilo) {
-        this.kilo = kilo;
-    }
+//
+//    public Double getKilo() {
+//        return kilo;
+//    }
+//
+//    public void setKilo(Double kilo) {
+//        this.kilo = kilo;
+//    }
 
     public Integer getQte() {
         return qte;

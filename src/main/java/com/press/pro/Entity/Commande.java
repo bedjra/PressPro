@@ -29,7 +29,7 @@ public class Commande {
     private Pressing pressing;
 
     private int qte;
-    private Double kilo;
+//    private Double kilo;
     private double montantBrut;
     private double remise;
     private double montantNet;
@@ -116,13 +116,13 @@ public class Commande {
         this.qte = qte;
     }
 
-    public Double getKilo() {
-        return kilo;
-    }
-
-    public void setKilo(Double kilo) {
-        this.kilo = kilo;
-    }
+//    public Double getKilo() {
+//        return kilo;
+//    }
+//
+//    public void setKilo(Double kilo) {
+//        this.kilo = kilo;
+//    }
 
     public double getMontantBrut() {
         return montantBrut;

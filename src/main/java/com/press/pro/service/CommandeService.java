@@ -72,9 +72,9 @@ public class CommandeService {
         commande.setPressing(user.getPressing());
 
         // Gestion du kilo et de la quantité
-        if (dto.getKilo() != null) {
-            commande.setKilo(dto.getKilo());
-        }
+//        if (dto.getKilo() != null) {
+//            commande.setKilo(dto.getKilo());
+//        }
 
         if (dto.getQte() != null) {
             commande.setQte(dto.getQte());
@@ -130,8 +130,7 @@ public class CommandeService {
       private Commande fromDto(CommandeDTO dto) {
         Commande c = new Commande();
         c.setQte(dto.getQte() != null ? dto.getQte() : 0);
-        c.setKilo(dto.getKilo() != null ? dto.getKilo() : 0.0);
-        c.setRemise(dto.getRemise() != null ? dto.getRemise() : 0);
+//        c.setRemise(dto.getRemise() != null ? dto.getRemise() : 0);
         c.setMontantBrut(dto.getMontantBrut() != null ? dto.getMontantBrut() : 0);
         c.setMontantNet(dto.getMontantNet() != null ? dto.getMontantNet() : 0);
         return c;
@@ -244,8 +243,7 @@ public class CommandeService {
 
         // --- Montants et quantités ---
         dto.setQte(c.getQte());
-        dto.setKilo(c.getKilo()); // ✅ ajouter
-        dto.setMontantBrut(c.getMontantBrut());
+//        dto.setMontantBrut(c.getMontantBrut());
         dto.setRemise(c.getRemise());
         dto.setMontantNet(c.getMontantNet());
         dto.setMontantPaye(c.getMontantPaye());
@@ -402,7 +400,7 @@ public class CommandeService {
         dto.setDateLivraison(commande.getDateLivraison());
         dto.setStatut(commande.getStatut());
         dto.setStatutPaiement(commande.getStatutPaiement());
-        dto.setKilo(commande.getKilo());
+      //  dto.setKilo(commande.getKilo());
 
         // --- Client ---
         if (commande.getClient() != null) {
