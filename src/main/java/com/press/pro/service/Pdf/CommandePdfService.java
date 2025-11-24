@@ -22,7 +22,7 @@ public class CommandePdfService {
     public byte[] genererCommandePdf(Commande commande) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
-        Rectangle receiptSize = new Rectangle(226, 2000); // Ticket 58mm
+        Rectangle receiptSize = new Rectangle(226, 300); // largeur 58mm, hauteur ~10cm
         Document document = new Document(receiptSize, 5, 5, 5, 5);
 
         try {
@@ -48,14 +48,21 @@ public class CommandePdfService {
             // LOGO
             PdfPCell logo = new PdfPCell();
             logo.setBorder(Rectangle.NO_BORDER);
+            logo.setVerticalAlignment(Element.ALIGN_MIDDLE); // centrer verticalement
+            logo.setPadding(0);
+            logo.setFixedHeight(60f); // hauteur alignée avec les infos
+
             try {
                 if (pressing.getLogo() != null && pressing.getLogo().length > 0) {
                     Image img = Image.getInstance(pressing.getLogo());
-                    img.scaleToFit(40, 40);
+                    img.scaleToFit(50, 50); // agrandir légèrement
+                    img.setAlignment(Image.ALIGN_MIDDLE);
                     logo.addElement(img);
                 }
             } catch (Exception ignored) {}
+
             header.addCell(logo);
+
 
             // INFOS PRESSING
             PdfPCell info = new PdfPCell();
@@ -115,10 +122,10 @@ public class CommandePdfService {
 
             PdfPCell right = new PdfPCell();
             right.setBorder(Rectangle.NO_BORDER);
-            right.addElement(new Paragraph("Réception : " +
+            right.addElement(new Paragraph("Rcp : " +
                     (commande.getDateReception() != null ? commande.getDateReception().format(df) : "-"), fontNormal));
 
-            right.addElement(new Paragraph("Livraison : " +
+            right.addElement(new Paragraph("Livr : " +
                     (commande.getDateLivraison() != null ? commande.getDateLivraison().format(df) : "-"), fontNormal));
 
             clientDate.addCell(right);
@@ -179,9 +186,6 @@ public class CommandePdfService {
             // =======================
             // SIGNATURE + MERCI
             // =======================
-            Paragraph sign = new Paragraph("Signature", fontNormal);
-            sign.setAlignment(Element.ALIGN_RIGHT);
-            document.add(sign);
 
             Paragraph merci = new Paragraph("Merci pour votre confiance!", fontNormal);
             merci.setAlignment(Element.ALIGN_CENTER);
