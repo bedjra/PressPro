@@ -17,4 +17,6 @@ public interface ParametreRepository extends JpaRepository<Parametre, Long> {
     // 🔹 Récupérer un paramètre par ID et pressing (évite doublons)
     @Query("SELECT DISTINCT p FROM Parametre p WHERE p.id = :id")
     Optional<Parametre> findDistinctByIdWithPressing(@Param("id") Long id);
+
+
 }
