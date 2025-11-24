@@ -40,70 +40,94 @@ public class CommandePdfService {
             // =======================
             //        ENTETE
             // =======================
-            PdfPTable headerTable = new PdfPTable(2);
-            headerTable.setWidthPercentage(100);
-            headerTable.setWidths(new float[]{1f, 3f});
-            headerTable.getDefaultCell().setBorder(Rectangle.NO_BORDER);
+            PdfPTable header = new PdfPTable(2);
+            header.setWidthPercentage(100);
+            header.setWidths(new float[]{1f, 3f});
+            header.getDefaultCell().setBorder(Rectangle.NO_BORDER);
 
-            PdfPCell logoCell = new PdfPCell();
-            logoCell.setBorder(Rectangle.NO_BORDER);
+            // LOGO
+            PdfPCell logo = new PdfPCell();
+            logo.setBorder(Rectangle.NO_BORDER);
             try {
                 if (pressing.getLogo() != null && pressing.getLogo().length > 0) {
-                    Image logo = Image.getInstance(pressing.getLogo());
-                    logo.scaleToFit(40, 40);
-                    logoCell.addElement(logo);
+                    Image img = Image.getInstance(pressing.getLogo());
+                    img.scaleToFit(40, 40);
+                    logo.addElement(img);
                 }
             } catch (Exception ignored) {}
-            headerTable.addCell(logoCell);
+            header.addCell(logo);
 
+            // INFOS PRESSING
             PdfPCell info = new PdfPCell();
             info.setBorder(Rectangle.NO_BORDER);
             info.setPaddingLeft(5f);
-            info.addElement(new Paragraph(pressing.getNom(), fontHeader));
-            if (pressing.getAdresse() != null) info.addElement(new Paragraph(pressing.getAdresse(), fontNormal));
-            info.addElement(new Paragraph("Tél: " + pressing.getTelephone(), fontNormal));
-            if (pressing.getCel() != null) info.addElement(new Paragraph("Cel: " + pressing.getCel(), fontNormal));
-            if (pressing.getEmail() != null) info.addElement(new Paragraph(pressing.getEmail(), fontNormal));
-            headerTable.addCell(info);
 
-            document.add(headerTable);
+            info.addElement(new Paragraph(pressing.getNom(), fontHeader));
+
+            if (pressing.getAdresse() != null)
+                info.addElement(new Paragraph(pressing.getAdresse(), fontNormal));
+
+            if (pressing.getEmail() != null)
+                info.addElement(new Paragraph(pressing.getEmail(), fontNormal));
+
+            // Tél + Cel sur une seule ligne
+            String contacts = "Tél: " + pressing.getTelephone();
+            if (pressing.getCel() != null && !pressing.getCel().isEmpty())
+                contacts += " | Cel: " + pressing.getCel();
+
+            info.addElement(new Paragraph(contacts, fontNormal));
+
+            header.addCell(info);
+
+            document.add(header);
             document.add(Chunk.NEWLINE);
 
             // =======================
-            //     NUMERO DE REÇU
+            //     N° DE REÇU
             // =======================
             Long numeroLocal = getNumeroLocal(commande);
-            Paragraph receiptNumber = new Paragraph("Reçu N° " + formatNumeroFacture(numeroLocal), fontBold);
-            receiptNumber.setAlignment(Element.ALIGN_CENTER);
-            document.add(receiptNumber);
+            Paragraph recuNo = new Paragraph("Reçu N° " + formatNumeroFacture(numeroLocal), fontBold);
+            recuNo.setAlignment(Element.ALIGN_CENTER);
+            document.add(recuNo);
             document.add(Chunk.NEWLINE);
 
             // =======================
-            //     INFO CLIENT
+            // CLIENT + DATES
             // =======================
-            PdfPTable clientTable = new PdfPTable(1);
-            clientTable.setWidthPercentage(100);
+            PdfPTable clientDate = new PdfPTable(2);
+            clientDate.setWidthPercentage(100);
+            clientDate.setWidths(new float[]{2f, 1f});
+            clientDate.getDefaultCell().setBorder(Rectangle.NO_BORDER);
 
-            clientTable.addCell(createCellNoBorder(
-                    "Client : " + (client != null ? client.getNom() : "CLIENT DIVERS"), fontNormal));
+            // GAUCHE : Client
+            PdfPCell left = new PdfPCell();
+            left.setBorder(Rectangle.NO_BORDER);
+            left.addElement(new Paragraph("Client : " +
+                    (client != null ? client.getNom() : "CLIENT DIVERS"), fontNormal));
 
-            clientTable.addCell(createCellNoBorder(
-                    "Adresse : " +
-                            (client != null && client.getAdresse() != null ? client.getAdresse() : "-"), fontNormal));
+            left.addElement(new Paragraph("Adresse : " +
+                    (client != null && client.getAdresse() != null ? client.getAdresse() : "-"), fontNormal));
 
-            document.add(clientTable);
+            clientDate.addCell(left);
 
+            // DROITE : Dates
             DateTimeFormatter df = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-            document.add(createParagraph("Réception : " +
+
+            PdfPCell right = new PdfPCell();
+            right.setBorder(Rectangle.NO_BORDER);
+            right.addElement(new Paragraph("Réception : " +
                     (commande.getDateReception() != null ? commande.getDateReception().format(df) : "-"), fontNormal));
 
-            document.add(createParagraph("Livraison : " +
+            right.addElement(new Paragraph("Livraison : " +
                     (commande.getDateLivraison() != null ? commande.getDateLivraison().format(df) : "-"), fontNormal));
 
+            clientDate.addCell(right);
+
+            document.add(clientDate);
             document.add(Chunk.NEWLINE);
 
             // =======================
-            //     LIGNES COMMANDE
+            //   LIGNES COMMANDE
             // =======================
             PdfPTable table = new PdfPTable(5);
             table.setWidthPercentage(100);
@@ -111,20 +135,18 @@ public class CommandePdfService {
 
             addTableHeader(table, new String[]{"Article", "Qté", "P.U", "Montant", "Remise"}, fontBold);
 
-            String serviceAbrege = param != null ? abregerService(param.getService()) : "-";
+            String ab = param != null ? abregerService(param.getService()) : "-";
             String article = param != null ? param.getArticle() : "-";
+            String articleFinal = article + " (" + ab + ")";
 
-            // Format final : Chemise (LS)
-            String articleFinal = article + " (" + serviceAbrege + ")";
-
-            double prixUnitaire = param != null ? param.getPrix() : 0.0;
+            double prix = param != null ? param.getPrix() : 0;
             int qte = commande.getQte();
             double remise = commande.getRemise();
-            double montant = prixUnitaire * qte;
+            double montant = prix * qte;
 
             table.addCell(createCellLeft(articleFinal, fontNormal));
             table.addCell(createCellCenter(String.valueOf(qte), fontNormal));
-            table.addCell(createCellRight(String.format("%.0f F", prixUnitaire), fontNormal));
+            table.addCell(createCellRight(String.format("%.0f F", prix), fontNormal));
             table.addCell(createCellRight(String.format("%.0f F", montant), fontNormal));
             table.addCell(createCellRight(String.format("%.0f F", remise), fontNormal));
 
@@ -144,8 +166,10 @@ public class CommandePdfService {
 
             totaux.addCell(createCellLeftWithBg("Montant HT", fontNormal, BaseColor.LIGHT_GRAY));
             totaux.addCell(createCellRightWithBg(String.format("%.0f F", net), fontNormal, BaseColor.LIGHT_GRAY));
+
             totaux.addCell(createCellLeft("Montant Payé", fontNormal));
             totaux.addCell(createCellRight(String.format("%.0f F", paye), fontNormal));
+
             totaux.addCell(createCellLeft("Reste à Payer", fontBold));
             totaux.addCell(createCellRight(String.format("%.0f F", reste), fontBold));
 
@@ -153,7 +177,7 @@ public class CommandePdfService {
             document.add(Chunk.NEWLINE);
 
             // =======================
-            //     SIGNATURE + MERCI
+            // SIGNATURE + MERCI
             // =======================
             Paragraph sign = new Paragraph("Signature", fontNormal);
             sign.setAlignment(Element.ALIGN_RIGHT);
@@ -165,14 +189,11 @@ public class CommandePdfService {
 
             document.close();
 
-            // =======================
-            //   SAUVEGARDE PDF
-            // =======================
+            // SAVE PDF
             String folder = PDF_BASE_FOLDER +
                     pressing.getNom().replaceAll("[^a-zA-Z0-9]", "_") + "/";
 
             Files.createDirectories(Paths.get(folder));
-
             try (FileOutputStream fos = new FileOutputStream(folder + "commande_" + commande.getId() + ".pdf")) {
                 fos.write(out.toByteArray());
             }
@@ -187,25 +208,23 @@ public class CommandePdfService {
     // ==========================
     //       UTILITAIRES
     // ==========================
-    private String abregerService(String service) {
-        if (service == null || service.isBlank()) return "-";
-
-        service = service.toUpperCase().replace("+", " ");
-        String[] mots = service.split("\\s+");
-
-        StringBuilder abrev = new StringBuilder();
-        for (String mot : mots) {
-            if (!mot.isBlank()) abrev.append(mot.charAt(0));
-            if (abrev.length() == 2) break;
+    private String abregerService(String s) {
+        if (s == null || s.isBlank()) return "-";
+        s = s.toUpperCase().replace("+", " ");
+        String[] mots = s.split("\\s+");
+        StringBuilder a = new StringBuilder();
+        for (String m : mots) {
+            if (!m.isBlank()) a.append(m.charAt(0));
+            if (a.length() == 2) break;
         }
-        return abrev.toString();
+        return a.toString();
     }
 
-    private long getNumeroLocal(Commande commande) {
-        Pressing pressing = commande.getPressing();
-        return pressing.getCommandes()
+    private long getNumeroLocal(Commande c) {
+        Pressing p = c.getPressing();
+        return p.getCommandes()
                 .stream()
-                .filter(c -> c.getId() <= commande.getId())
+                .filter(x -> x.getId() <= c.getId())
                 .count();
     }
 
