@@ -6,6 +6,7 @@ import com.press.pro.enums.StatutPaiement;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
+import java.util.List;
 
 public class CommandeDTO {
 
@@ -18,21 +19,22 @@ public class CommandeDTO {
 
     // Paramètre complet + ID pour liaison
     private Long parametreId;
-    private String article;
-    private String service;
-    private Double prix;
-//    private Double kilo;
 
-    // Quantité et montants
-    private Integer qte;
-    private Double montantBrut;
-    private Double remise;
-    private Double montantNet;
+    // Liste d'articles/services/prix
+    private List<String> articles;
+    private List<String> services;
+    private List<Double> prix;
+    // private List<Double> kilos; // si besoin
+
+    // Quantités et montants correspondants
+    private List<Integer> qtes;
+    private List<Double> montantsBruts;
+    private List<Double> remises;
+    private List<Double> montantsNets;
 
     // Montants payés et reste à payer
     private Double montantPaye;    // montant déjà versé
     private Double resteAPayer;    // calculé = montantNet - montantPaye
-
 
     @NotNull(message = "La date de réception est obligatoire")
     @JsonFormat(pattern = "yyyy-MM-dd")
@@ -41,162 +43,63 @@ public class CommandeDTO {
     @NotNull(message = "La date de livraison est obligatoire")
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate dateLivraison;
+
     // Statuts
     private StatutCommande statut;
     private StatutPaiement statutPaiement;
 
+    // Getters et setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
+    public Long getClientId() { return clientId; }
+    public void setClientId(Long clientId) { this.clientId = clientId; }
 
-    //----------------- Getters / Setters -----------------
-    public Long getId() {
-        return id;
-    }
+    public String getClientNom() { return clientNom; }
+    public void setClientNom(String clientNom) { this.clientNom = clientNom; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public String getClientTelephone() { return clientTelephone; }
+    public void setClientTelephone(String clientTelephone) { this.clientTelephone = clientTelephone; }
 
-    public Long getClientId() {
-        return clientId;
-    }
+    public Long getParametreId() { return parametreId; }
+    public void setParametreId(Long parametreId) { this.parametreId = parametreId; }
 
-    public void setClientId(Long clientId) {
-        this.clientId = clientId;
-    }
+    public List<String> getArticles() { return articles; }
+    public void setArticles(List<String> articles) { this.articles = articles; }
 
-    public String getClientNom() {
-        return clientNom;
-    }
+    public List<String> getServices() { return services; }
+    public void setServices(List<String> services) { this.services = services; }
 
-    public void setClientNom(String clientNom) {
-        this.clientNom = clientNom;
-    }
+    public List<Double> getPrix() { return prix; }
+    public void setPrix(List<Double> prix) { this.prix = prix; }
 
-    public String getClientTelephone() {
-        return clientTelephone;
-    }
+    public List<Integer> getQtes() { return qtes; }
+    public void setQtes(List<Integer> qtes) { this.qtes = qtes; }
 
-    public void setClientTelephone(String clientTelephone) {
-        this.clientTelephone = clientTelephone;
-    }
+    public List<Double> getMontantsBruts() { return montantsBruts; }
+    public void setMontantsBruts(List<Double> montantsBruts) { this.montantsBruts = montantsBruts; }
 
-    public Long getParametreId() {
-        return parametreId;
-    }
+    public List<Double> getRemises() { return remises; }
+    public void setRemises(List<Double> remises) { this.remises = remises; }
 
-    public void setParametreId(Long parametreId) {
-        this.parametreId = parametreId;
-    }
+    public List<Double> getMontantsNets() { return montantsNets; }
+    public void setMontantsNets(List<Double> montantsNets) { this.montantsNets = montantsNets; }
 
-    public String getArticle() {
-        return article;
-    }
+    public Double getMontantPaye() { return montantPaye; }
+    public void setMontantPaye(Double montantPaye) { this.montantPaye = montantPaye; }
 
-    public void setArticle(String article) {
-        this.article = article;
-    }
+    public Double getResteAPayer() { return resteAPayer; }
+    public void setResteAPayer(Double resteAPayer) { this.resteAPayer = resteAPayer; }
 
-    public String getService() {
-        return service;
-    }
+    public LocalDate getDateReception() { return dateReception; }
+    public void setDateReception(LocalDate dateReception) { this.dateReception = dateReception; }
 
-    public void setService(String service) {
-        this.service = service;
-    }
+    public LocalDate getDateLivraison() { return dateLivraison; }
+    public void setDateLivraison(LocalDate dateLivraison) { this.dateLivraison = dateLivraison; }
 
-    public Double getPrix() {
-        return prix;
-    }
+    public StatutCommande getStatut() { return statut; }
+    public void setStatut(StatutCommande statut) { this.statut = statut; }
 
-    public void setPrix(Double prix) {
-        this.prix = prix;
-    }
-//
-//    public Double getKilo() {
-//        return kilo;
-//    }
-//
-//    public void setKilo(Double kilo) {
-//        this.kilo = kilo;
-//    }
-
-    public Integer getQte() {
-        return qte;
-    }
-
-    public void setQte(Integer qte) {
-        this.qte = qte;
-    }
-
-    public Double getMontantBrut() {
-        return montantBrut;
-    }
-
-    public void setMontantBrut(Double montantBrut) {
-        this.montantBrut = montantBrut;
-    }
-
-    public Double getRemise() {
-        return remise;
-    }
-
-    public void setRemise(Double remise) {
-        this.remise = remise;
-    }
-
-    public Double getMontantNet() {
-        return montantNet;
-    }
-
-    public void setMontantNet(Double montantNet) {
-        this.montantNet = montantNet;
-    }
-
-    public Double getMontantPaye() {
-        return montantPaye;
-    }
-
-    public void setMontantPaye(Double montantPaye) {
-        this.montantPaye = montantPaye;
-    }
-
-    public Double getResteAPayer() {
-        return resteAPayer;
-    }
-
-    public void setResteAPayer(Double resteAPayer) {
-        this.resteAPayer = resteAPayer;
-    }
-
-    public LocalDate getDateReception() {
-        return dateReception;
-    }
-
-    public void setDateReception(LocalDate dateReception) {
-        this.dateReception = dateReception;
-    }
-
-    public LocalDate getDateLivraison() {
-        return dateLivraison;
-    }
-
-    public void setDateLivraison(LocalDate dateLivraison) {
-        this.dateLivraison = dateLivraison;
-    }
-
-    public StatutCommande getStatut() {
-        return statut;
-    }
-
-    public void setStatut(StatutCommande statut) {
-        this.statut = statut;
-    }
-
-    public StatutPaiement getStatutPaiement() {
-        return statutPaiement;
-    }
-
-    public void setStatutPaiement(StatutPaiement statutPaiement) {
-        this.statutPaiement = statutPaiement;
-    }
+    public StatutPaiement getStatutPaiement() { return statutPaiement; }
+    public void setStatutPaiement(StatutPaiement statutPaiement) { this.statutPaiement = statutPaiement; }
 }

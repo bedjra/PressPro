@@ -261,68 +261,6 @@ public class CommandeService {
     }
 
 
-    // 🔹 Chiffre d’affaires du jour
-    public Double getCAJournalier() {
-        Utilisateur user = getUserConnecte();
-        LocalDate today = LocalDate.now();
-
-        return commandeRepository
-                .sumMontantNetByDateAndPressing(today, user.getPressing().getId())
-                .orElse(0.0);
-    }
-
-    // 🔹 Chiffre d’affaires hebdomadaire
-    public Double getCAHebdomadaire() {
-        Utilisateur user = getUserConnecte();
-        LocalDate debut = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
-        LocalDate fin = LocalDate.now().with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
-
-        Double caBrut = commandeRepository
-                .sumMontantNetBetweenDatesAndPressing(debut, fin, user.getPressing().getId())
-                .orElse(0.0);
-
-        return Math.round(caBrut * 100.0) / 100.0;
-    }
-
-    // 🔹 Chiffre d’affaires mensuel
-    public Double getCAMensuel() {
-        Utilisateur user = getUserConnecte();
-        LocalDate debut = LocalDate.now().withDayOfMonth(1);
-        LocalDate fin = LocalDate.now().withDayOfMonth(LocalDate.now().lengthOfMonth());
-
-        Double caBrut = commandeRepository
-                .sumMontantNetBetweenDatesAndPressing(debut, fin, user.getPressing().getId())
-                .orElse(0.0);
-
-        return Math.round(caBrut * 100.0) / 100.0;
-    }
-
-    // 🔹 Chiffre d’affaires annuel
-    public Double getCAAnnuel() {
-        Utilisateur user = getUserConnecte();
-        LocalDate debut = LocalDate.now().withDayOfYear(1);
-        LocalDate fin = LocalDate.now().with(TemporalAdjusters.lastDayOfYear());
-
-        Double caBrut = commandeRepository
-                .sumMontantNetBetweenDatesAndPressing(debut, fin, user.getPressing().getId())
-                .orElse(0.0);
-
-        return Math.round(caBrut * 100.0) / 100.0;
-    }
-
-
-
-
-
-    public Double getTotalImpayes() {
-        Utilisateur user = getUserConnecte();
-        return commandeRepository.sumResteAPayerByPressingAndStatutPaiement(
-                user.getPressing().getId(),
-                List.of(StatutPaiement.NON_PAYE, StatutPaiement.PARTIELLEMENT_PAYE)
-        ).orElse(0.0);
-    }
-
-
 
 
     // 🔹 Changer le statut d'une commande
