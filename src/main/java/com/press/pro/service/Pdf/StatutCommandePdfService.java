@@ -224,7 +224,7 @@ public class StatutCommandePdfService {
             document.add(merci);
 
             Paragraph userInfo = new Paragraph(
-                    "Émis par : " + utilisateur.getEmail() + " " + utilisateur.getRole(),
+                    "Émis par : " + utilisateur.getEmail() ,
                     fontSmall
             );
             userInfo.setAlignment(Element.ALIGN_CENTER);
