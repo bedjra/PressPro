@@ -218,11 +218,6 @@ public class StatutCommandePdfService {
             // =======================
             // Message final
             // =======================
-            Paragraph merci = new Paragraph("Merci pour votre fidélité !", fontTitle);
-            merci.setAlignment(Element.ALIGN_CENTER);
-            merci.setSpacingBefore(10f);
-            document.add(merci);
-
             Paragraph userInfo = new Paragraph(
                     "Émis par : " + utilisateur.getEmail() ,
                     fontSmall
@@ -231,6 +226,10 @@ public class StatutCommandePdfService {
             userInfo.setSpacingBefore(5f);
             document.add(userInfo);
 
+            Paragraph merci = new Paragraph("Merci pour votre fidélité !", fontTitle);
+            merci.setAlignment(Element.ALIGN_CENTER);
+            merci.setSpacingBefore(10f);
+            document.add(merci);
 
             document.close();
 

@@ -275,18 +275,19 @@ public class CommandePdfService {
             // =======================
             // MESSAGE DE FIN
             // =======================
-            Paragraph merci = new Paragraph("Merci pour votre confiance!", fontTitle);
-            merci.setAlignment(Element.ALIGN_CENTER);
-            merci.setSpacingBefore(8f);
-            document.add(merci);
-
             Paragraph userInfo = new Paragraph(
-                    "Émis par : " + user.getEmail() + " " + user.getRole(),
+                    "Émis par : " + user.getEmail(),
                     fontSmall
             );
             userInfo.setAlignment(Element.ALIGN_CENTER);
             userInfo.setSpacingBefore(5f);
             document.add(userInfo);
+
+            Paragraph merci = new Paragraph("Merci pour votre confiance!", fontTitle);
+            merci.setAlignment(Element.ALIGN_CENTER);
+            merci.setSpacingBefore(8f);
+            document.add(merci);
+
 
             document.close();
 
