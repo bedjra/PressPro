@@ -5,6 +5,7 @@ import com.itextpdf.text.pdf.*;
 import com.itextpdf.text.pdf.draw.LineSeparator;
 import com.press.pro.Entity.Client;
 import com.press.pro.Entity.Commande;
+import com.press.pro.Entity.CommandeLigne;
 import com.press.pro.Entity.Parametre;
 import com.press.pro.Entity.Pressing;
 import org.springframework.stereotype.Service;
@@ -14,262 +15,377 @@ import java.io.FileOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.format.DateTimeFormatter;
-import java.util.stream.Stream;
 
 @Service
 public class CommandePdfService {
 
     private static final String PDF_BASE_FOLDER = "pdfCommandes/";
-    private static final String LOGO_FOLDER = "uploads/";
 
     public byte[] genererCommandePdf(Commande commande) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        Document document = new Document(PageSize.A6, 10, 10, 10, 10);
+        // Largeur augmentée pour plus de clarté
+        Rectangle receiptSize = new Rectangle(250, 600);
+        Document document = new Document(receiptSize, 10, 10, 10, 10);
 
         try {
             PdfWriter.getInstance(document, out);
             document.open();
 
-            // --- Fonts ---
-            Font fontTitre = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14);
-            Font fontSousTitre = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10);
-            Font fontInfo = FontFactory.getFont(FontFactory.HELVETICA, 7);
-            Font fontTableHeader = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 7);
-            Font fontTable = FontFactory.getFont(FontFactory.HELVETICA, 7);
-            Font fontMontant = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9);
+            // Polices améliorées avec tailles plus adaptées
+            Font fontBold = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9);
+            Font fontNormal = FontFactory.getFont(FontFactory.HELVETICA, 8);
+            Font fontHeader = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12);
+            Font fontTitle = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10);
+            Font fontSmall = FontFactory.getFont(FontFactory.HELVETICA, 7);
 
             Pressing pressing = commande.getPressing();
-
-            // --- ENTETE ---
-            PdfPTable headerTable = new PdfPTable(2);
-            headerTable.setWidthPercentage(100);
-            headerTable.setWidths(new float[]{1f, 3f});
-            headerTable.getDefaultCell().setBorder(Rectangle.NO_BORDER);
-
-            // Logo
-            PdfPCell logoCell = new PdfPCell();
-            logoCell.setBorder(Rectangle.NO_BORDER);
-            logoCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
-            try {
-                if (pressing.getLogo() != null && pressing.getLogo().length > 0) {
-                    Image logo = Image.getInstance(pressing.getLogo());
-                    logo.scaleToFit(40, 40);
-                    logoCell.addElement(logo);
-                }
-            } catch (Exception e) {
-                System.out.println("Erreur chargement logo : " + e.getMessage());
-            }
-            headerTable.addCell(logoCell);
-
-            // Info pressing
-            PdfPCell infoCell = new PdfPCell();
-            infoCell.setBorder(Rectangle.NO_BORDER);
-            infoCell.setPaddingLeft(5f);
-            infoCell.addElement(new Paragraph(pressing.getNom(), fontTitre));
-            infoCell.addElement(new Paragraph(pressing.getAdresse(), fontInfo));
-            infoCell.addElement(new Paragraph("Tél: " + pressing.getTelephone(), fontInfo));
-            if (pressing.getCel() != null && !pressing.getCel().isBlank())
-                infoCell.addElement(new Paragraph("Cel: " + pressing.getCel(), fontInfo));
-            if (pressing.getEmail() != null)
-                infoCell.addElement(new Paragraph(pressing.getEmail(), fontInfo));
-            headerTable.addCell(infoCell);
-
-            document.add(headerTable);
-            document.add(Chunk.NEWLINE);
-            document.add(new LineSeparator());
-            document.add(Chunk.NEWLINE);
-
-            // --- NUMERO LOCAL DU REÇU ---
-            Long numeroLocal = getNumeroLocal(commande);
-            Paragraph factureTitle = new Paragraph(
-                    "Reçu N° " + formatNumeroFacture(numeroLocal),
-                    fontSousTitre
-            );
-            factureTitle.setAlignment(Element.ALIGN_CENTER);
-            factureTitle.setSpacingAfter(5);
-            document.add(factureTitle);
-
-            // --- INFO CLIENT ---
-            PdfPTable topInfo = new PdfPTable(2);
-            topInfo.setWidthPercentage(100);
-            topInfo.setWidths(new float[]{2f, 1f});
-            topInfo.getDefaultCell().setBorder(Rectangle.NO_BORDER);
-
             Client client = commande.getClient();
 
-            // Gauche : Client
-            PdfPTable left = new PdfPTable(1);
-            left.getDefaultCell().setBorder(Rectangle.NO_BORDER);
-            left.addCell(createCellNoBorder("Client : " + (client != null ? client.getNom() : "CLIENT DIVERS"), fontTable));
-            left.addCell(createCellNoBorder("Adresse : " + (client != null && client.getAdresse() != null ? client.getAdresse() : "-"), fontInfo));
-            topInfo.addCell(left);
+            // =======================
+            //        ENTETE AMÉLIORÉ
+            // =======================
+            PdfPTable header = new PdfPTable(2);
+            header.setWidthPercentage(100);
+            header.setWidths(new float[]{1.2f, 3f});
+            header.getDefaultCell().setBorder(Rectangle.NO_BORDER);
+            header.setSpacingAfter(8f);
 
-            // Droite : Dates
-            PdfPTable right = new PdfPTable(1);
-            right.getDefaultCell().setBorder(Rectangle.NO_BORDER);
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            // LOGO avec encadrement subtil
+            PdfPCell logo = new PdfPCell();
+            logo.setBorder(Rectangle.BOX);
+            logo.setBorderWidth(0.5f);
+            logo.setBorderColor(BaseColor.LIGHT_GRAY);
+            logo.setVerticalAlignment(Element.ALIGN_MIDDLE);
+            logo.setHorizontalAlignment(Element.ALIGN_CENTER);
+            logo.setPadding(3);
+            logo.setFixedHeight(65f);
 
-            String dateReception = commande.getDateReception() != null
-                    ? commande.getDateReception().format(formatter)
-                    : "-";
-            String dateLivraison = commande.getDateLivraison() != null
-                    ? commande.getDateLivraison().format(formatter)
-                    : "-";
+            try {
+                if (pressing.getLogo() != null && pressing.getLogo().length > 0) {
+                    Image img = Image.getInstance(pressing.getLogo());
+                    img.scaleToFit(55, 55);
+                    img.setAlignment(Image.ALIGN_CENTER);
+                    logo.addElement(img);
+                }
+            } catch (Exception ignored) {
+                Paragraph noLogo = new Paragraph("LOGO", fontSmall);
+                noLogo.setAlignment(Element.ALIGN_CENTER);
+                logo.addElement(noLogo);
+            }
 
-            right.addCell(createCellNoBorder("Réception : " + dateReception, fontInfo));
-            right.addCell(createCellNoBorder("Livraison : " + dateLivraison, fontInfo));
-            topInfo.addCell(right);
+            header.addCell(logo);
 
-            document.add(topInfo);
+            // INFOS PRESSING avec meilleur espacement
+            PdfPCell info = new PdfPCell();
+            info.setBorder(Rectangle.NO_BORDER);
+            info.setPaddingLeft(8f);
+            info.setVerticalAlignment(Element.ALIGN_MIDDLE);
 
-            // --- TABLEAU COMMANDE ---
-            // --- TABLEAU COMMANDE ---
-            PdfPTable table = new PdfPTable(5);
-            table.setWidthPercentage(100);
-            table.setWidths(new float[]{3f, 1f, 1f, 1f, 1f}); // Article, Qté, Prix Unitaire, Montant, Remise
+            Paragraph nom = new Paragraph(pressing.getNom(), fontHeader);
+            nom.setSpacingAfter(3f);
+            info.addElement(nom);
 
-// --- Header ---
-            Stream.of("Article", "Qté", "P.U", "Montant", "Remise")
-                    .forEach(h -> {
-                        PdfPCell hd = new PdfPCell(new Phrase(h, fontTableHeader));
-                        hd.setHorizontalAlignment(Element.ALIGN_CENTER);
-                        hd.setPadding(3f);
-                        hd.setBackgroundColor(BaseColor.LIGHT_GRAY);
-                        table.addCell(hd);
-                    });
+            if (pressing.getAdresse() != null && !pressing.getAdresse().isEmpty()) {
+                Paragraph adresse = new Paragraph(pressing.getAdresse(), fontSmall);
+                adresse.setSpacingAfter(2f);
+                info.addElement(adresse);
+            }
 
-// --- Ligne de commande ---
-            Parametre param = commande.getParametre();
-            String article = param != null ? param.getArticle() : "-";
-            double prixUnitaire = param != null ? param.getPrix() : 0.0;
-            int qte = commande.getQte();
-            double remiseTotale = commande.getRemise();
-            double montant = prixUnitaire * qte;
+            if (pressing.getEmail() != null && !pressing.getEmail().isEmpty()) {
+                Paragraph email = new Paragraph("✉ " + pressing.getEmail(), fontSmall);
+                email.setSpacingAfter(2f);
+                info.addElement(email);
+            }
 
-            table.addCell(createCellLeft(article, fontTable));
-            table.addCell(createCellCenter(String.valueOf(qte), fontTable));
-            table.addCell(createCellRight(String.format("%.0f F", prixUnitaire), fontTable));
-            table.addCell(createCellRight(String.format("%.0f F", montant), fontTable));
-            table.addCell(createCellRight(String.format("%.0f F", remiseTotale), fontTable));
+            String contacts = "☎ " + pressing.getTelephone();
+            if (pressing.getCel() != null && !pressing.getCel().isEmpty())
+                contacts += " | " + pressing.getCel();
+            Paragraph tel = new Paragraph(contacts, fontSmall);
+            info.addElement(tel);
 
-            document.add(table);
+            header.addCell(info);
+            document.add(header);
 
+            // Ligne de séparation
+            addSeparatorLine(document, 1f);
 
-            // --- TOTAUX ---
-            PdfPTable outer = new PdfPTable(2);
-            outer.setWidthPercentage(100);
-            outer.setWidths(new float[]{1.3f, 1f});
-            outer.getDefaultCell().setBorder(Rectangle.NO_BORDER);
-            outer.setSpacingBefore(10f);
+            // =======================
+            //     N° DE REÇU STYLISÉ
+            // =======================
+            Long numeroLocal = getNumeroLocal(commande);
+            PdfPTable recuTable = new PdfPTable(1);
+            recuTable.setWidthPercentage(100);
+            recuTable.setSpacingBefore(5f);
+            recuTable.setSpacingAfter(5f);
 
-            PdfPCell empty = new PdfPCell(new Phrase(""));
-            empty.setBorder(Rectangle.NO_BORDER);
-            outer.addCell(empty);
+            PdfPCell recuCell = new PdfPCell();
+            recuCell.setBackgroundColor(new BaseColor(240, 240, 240));
+            recuCell.setBorder(Rectangle.BOX);
+            recuCell.setBorderWidth(1f);
+            recuCell.setPadding(5f);
+
+            Paragraph recuNo = new Paragraph("BON DE COMMANDE N° " + formatNumeroFacture(numeroLocal), fontTitle);
+            recuNo.setAlignment(Element.ALIGN_CENTER);
+            recuCell.addElement(recuNo);
+
+            recuTable.addCell(recuCell);
+            document.add(recuTable);
+
+            // =======================
+            // CLIENT + DATES AMÉLIORÉS
+            // =======================
+            PdfPTable clientDate = new PdfPTable(2);
+            clientDate.setWidthPercentage(100);
+            clientDate.setWidths(new float[]{2.2f, 1.8f});
+            clientDate.setSpacingAfter(8f);
+
+            DateTimeFormatter df = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+            // Colonne client
+            PdfPCell leftCell = new PdfPCell();
+            leftCell.setBorder(Rectangle.BOX);
+            leftCell.setBorderWidth(0.5f);
+            leftCell.setBorderColor(BaseColor.LIGHT_GRAY);
+            leftCell.setPadding(5f);
+            leftCell.setBackgroundColor(new BaseColor(250, 250, 250));
+
+            Paragraph clientLabel = new Paragraph("Client", fontBold);
+            clientLabel.setSpacingAfter(2f);
+            leftCell.addElement(clientLabel);
+
+            leftCell.addElement(new Paragraph(
+                    client != null ? client.getNom() : "CLIENT DIVERS", fontNormal));
+
+            if (client != null && client.getAdresse() != null && !client.getAdresse().isEmpty()) {
+                Paragraph adr = new Paragraph(client.getAdresse(), fontSmall);
+                adr.setSpacingBefore(2f);
+                leftCell.addElement(adr);
+            }
+
+            clientDate.addCell(leftCell);
+
+            // Colonne dates
+            PdfPCell rightCell = new PdfPCell();
+            rightCell.setBorder(Rectangle.BOX);
+            rightCell.setBorderWidth(0.5f);
+            rightCell.setBorderColor(BaseColor.LIGHT_GRAY);
+            rightCell.setPadding(5f);
+            rightCell.setBackgroundColor(new BaseColor(250, 250, 250));
+
+            Paragraph datesLabel = new Paragraph("Dates", fontBold);
+            datesLabel.setSpacingAfter(2f);
+            rightCell.addElement(datesLabel);
+
+            rightCell.addElement(new Paragraph("Réception: " +
+                    (commande.getDateReception() != null ? commande.getDateReception().format(df) : "-"), fontSmall));
+
+            Paragraph livr = new Paragraph("Livraison: " +
+                    (commande.getDateLivraison() != null ? commande.getDateLivraison().format(df) : "-"), fontSmall);
+            livr.setSpacingBefore(2f);
+            rightCell.addElement(livr);
+
+            clientDate.addCell(rightCell);
+            document.add(clientDate);
+
+            // =======================
+            //       LIGNES DE COMMANDE AMÉLIORÉES
+            // =======================
+            PdfPTable lignesTable = new PdfPTable(4);
+            lignesTable.setWidthPercentage(100);
+            lignesTable.setWidths(new float[]{3.5f, 0.8f, 1.2f, 1.5f});
+            lignesTable.setSpacingAfter(8f);
+
+            // En-tête avec style
+            addStyledTableHeader(lignesTable, new String[]{"Article", "Qté", "P.U", "Montant"}, fontBold);
+
+            // Lignes avec alternance de couleurs
+            int index = 0;
+            for (CommandeLigne ligne : commande.getLignes()) {
+                Parametre param = ligne.getParametre();
+                BaseColor bgColor = (index % 2 == 0) ? BaseColor.WHITE : new BaseColor(248, 248, 248);
+
+                String ab = param != null ? abregerService(param.getService()) : "-";
+                String article = param != null ? param.getArticle() : "-";
+                String articleFinal = article + " (" + ab + ")";
+
+                double pu = param != null ? param.getPrix() : 0;
+                double montantNet = ligne.getQuantite() * pu;
+
+                lignesTable.addCell(createStyledCell(articleFinal, fontNormal, Element.ALIGN_LEFT, bgColor));
+                lignesTable.addCell(createStyledCell(String.valueOf(ligne.getQuantite()), fontNormal, Element.ALIGN_CENTER, bgColor));
+                lignesTable.addCell(createStyledCell(String.format("%.0f F", pu), fontNormal, Element.ALIGN_RIGHT, bgColor));
+                lignesTable.addCell(createStyledCell(String.format("%.0f F", montantNet), fontBold, Element.ALIGN_RIGHT, bgColor));
+
+                index++;
+            }
+
+            document.add(lignesTable);
+
+            // Ligne de séparation avant totaux
+            addSeparatorLine(document, 0.5f);
+
+            // =======================
+            //        TOTAUX AMÉLIORÉS
+            // =======================
+            double montantTotalBrut = commande.getLignes().stream()
+                    .mapToDouble(ligne -> {
+                        double pu = ligne.getParametre() != null ? ligne.getParametre().getPrix() : 0;
+                        return ligne.getQuantite() * pu;
+                    })
+                    .sum();
+
+            double remise = commande.getRemise();
+            double montantApresRemise = montantTotalBrut - remise;
+            double paye = commande.getMontantPaye();
+            double resteAPayer = montantApresRemise - paye;
 
             PdfPTable totaux = new PdfPTable(2);
             totaux.setWidthPercentage(100);
-            totaux.setWidths(new float[]{2f, 1f});
+            totaux.setWidths(new float[]{2.5f, 1.5f});
+            totaux.setSpacingBefore(5f);
+            totaux.setSpacingAfter(8f);
 
-            double netCommercial = montant - remiseTotale;
-            double montantTTC = netCommercial;
-            double montantPaye = commande.getMontantPaye();
-            double resteAPayer = montantTTC - montantPaye;
+            // Sous-total
+            totaux.addCell(createTotalCell("Montant Total", fontNormal, false));
+            totaux.addCell(createTotalCell(String.format("%.0f F", montantTotalBrut), fontNormal, true));
 
-            // Montant HT
-            totaux.addCell(createCellLeftWithBg("Montant HT", fontTable, BaseColor.LIGHT_GRAY));
-            totaux.addCell(createCellRightWithBg(String.format("%.0f F", montantTTC), fontTable, BaseColor.LIGHT_GRAY));
+            // Remise
+            if (remise > 0) {
+                totaux.addCell(createTotalCell("Remise", fontNormal, false));
+                totaux.addCell(createTotalCell(String.format("- %.0f F", remise), fontNormal, true));
+            }
 
-// Montant payé
-            totaux.addCell(createCellLeft("Montant Payé", fontTable));
-            totaux.addCell(createCellRight(String.format("%.0f F", montantPaye), fontTable));
+            // Net à payer
+            totaux.addCell(createTotalCell("Net à Payer", fontBold, false, new BaseColor(230, 230, 230)));
+            totaux.addCell(createTotalCell(String.format("%.0f F", montantApresRemise), fontBold, true, new BaseColor(230, 230, 230)));
 
-// Reste à payer
-            totaux.addCell(createCellLeft("Reste à Payer", fontTableHeader));
-            totaux.addCell(createCellRight(String.format("%.0f F", resteAPayer), fontMontant));
+            // Montant payé
+            if (paye > 0) {
+                totaux.addCell(createTotalCell("Montant Payé", fontNormal, false));
+                totaux.addCell(createTotalCell(String.format("%.0f F", paye), fontNormal, true));
+            }
 
-            PdfPCell totauxCell = new PdfPCell(totaux);
-            totauxCell.setBorder(Rectangle.NO_BORDER);
-            outer.addCell(totauxCell);
-            document.add(outer);
+            // Reste à payer - en surbrillance si > 0
+            BaseColor resteBg = resteAPayer > 0 ? new BaseColor(255, 245, 230) : new BaseColor(230, 255, 230);
+            totaux.addCell(createTotalCell("Reste à Payer", fontBold, false, resteBg));
+            totaux.addCell(createTotalCell(String.format("%.0f F", resteAPayer), fontBold, true, resteBg));
 
-            // --- Signature ---
-            Paragraph signature = new Paragraph("Signature", fontInfo);
-            signature.setAlignment(Element.ALIGN_RIGHT);
-            signature.setSpacingBefore(10);
-            document.add(signature);
+            document.add(totaux);
+
+            // Ligne de séparation finale
+            addSeparatorLine(document, 1f);
+
+            // =======================
+            // MESSAGE DE FIN
+            // =======================
+            Paragraph merci = new Paragraph("Merci pour votre confiance!", fontTitle);
+            merci.setAlignment(Element.ALIGN_CENTER);
+            merci.setSpacingBefore(8f);
+            document.add(merci);
 
             document.close();
 
-            // --- Enregistrement PDF ---
-            String pressingFolder = PDF_BASE_FOLDER + pressing.getNom().replaceAll("[^a-zA-Z0-9]", "_") + "/";
-            Files.createDirectories(Paths.get(pressingFolder));
-            String filePath = pressingFolder + "commande_" + commande.getId() + ".pdf";
-
-            try (FileOutputStream fos = new FileOutputStream(filePath)) {
+            // SAVE PDF
+            String folder = PDF_BASE_FOLDER + pressing.getNom().replaceAll("[^a-zA-Z0-9]", "_") + "/";
+            Files.createDirectories(Paths.get(folder));
+            try (FileOutputStream fos = new FileOutputStream(folder + "commande_" + commande.getId() + ".pdf")) {
                 fos.write(out.toByteArray());
             }
 
         } catch (Exception e) {
-            throw new RuntimeException("Erreur PDF : " + e.getMessage(), e);
+            throw new RuntimeException("Erreur PDF thermique : " + e.getMessage(), e);
         }
 
         return out.toByteArray();
     }
 
-    // --- Génération numéro local ---
-    private long getNumeroLocal(Commande commande) {
-        Pressing pressing = commande.getPressing();
-        return pressing.getCommandes()
-                .stream()
-                .filter(c -> c.getId() <= commande.getId())
-                .count();
+    // ==========================
+    //       UTILITAIRES AMÉLIORÉS
+    // ==========================
+
+    private void addSeparatorLine(Document document, float width) throws DocumentException {
+        LineSeparator line = new LineSeparator();
+        line.setLineWidth(width);
+        line.setLineColor(BaseColor.LIGHT_GRAY);
+        document.add(new Chunk(line));
+        document.add(Chunk.NEWLINE);
     }
 
-    // --- Utilitaires cellules ---
-    private PdfPCell createCellNoBorder(String text, Font font) {
+    private PdfPCell createStyledCell(String text, Font font, int alignment, BaseColor bgColor) {
         PdfPCell cell = new PdfPCell(new Phrase(text, font));
+        cell.setHorizontalAlignment(alignment);
         cell.setBorder(Rectangle.NO_BORDER);
-        cell.setPadding(3f);
+        cell.setPadding(4f);
+        cell.setBackgroundColor(bgColor);
         return cell;
     }
 
-    private PdfPCell createCellLeft(String text, Font font) {
+    private PdfPCell createTotalCell(String text, Font font, boolean isAmount) {
+        return createTotalCell(text, font, isAmount, null);
+    }
+
+    private PdfPCell createTotalCell(String text, Font font, boolean isAmount, BaseColor bgColor) {
         PdfPCell cell = new PdfPCell(new Phrase(text, font));
-        cell.setHorizontalAlignment(Element.ALIGN_LEFT);
+        cell.setHorizontalAlignment(isAmount ? Element.ALIGN_RIGHT : Element.ALIGN_LEFT);
         cell.setBorder(Rectangle.NO_BORDER);
-        cell.setPadding(3f);
+        cell.setPadding(4f);
+        if (bgColor != null) {
+            cell.setBackgroundColor(bgColor);
+        }
         return cell;
     }
 
-    private PdfPCell createCellLeftWithBg(String text, Font font, BaseColor bg) {
-        PdfPCell cell = createCellLeft(text, font);
-        cell.setBackgroundColor(bg);
-        return cell;
+    private void addStyledTableHeader(PdfPTable table, String[] headers, Font font) {
+        for (String h : headers) {
+            PdfPCell cell = new PdfPCell(new Phrase(h, font));
+            cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            cell.setPadding(4f);
+            cell.setBackgroundColor(new BaseColor(200, 200, 200));
+            cell.setBorder(Rectangle.BOX);
+            cell.setBorderWidth(0.5f);
+            table.addCell(cell);
+        }
     }
 
-    private PdfPCell createCellCenter(String text, Font font) {
-        PdfPCell cell = new PdfPCell(new Phrase(text, font));
-        cell.setHorizontalAlignment(Element.ALIGN_CENTER);
-        cell.setBorder(Rectangle.NO_BORDER);
-        cell.setPadding(3f);
-        return cell;
+    private String abregerService(String s) {
+        if (s == null || s.isBlank()) return "-";
+        s = s.toUpperCase().replace("+", " ");
+        String[] mots = s.split("\\s+");
+        StringBuilder a = new StringBuilder();
+        for (String m : mots) {
+            if (!m.isBlank()) a.append(m.charAt(0));
+            if (a.length() == 3) break;
+        }
+        return a.toString();
     }
 
-    private PdfPCell createCellRight(String text, Font font) {
-        PdfPCell cell = new PdfPCell(new Phrase(text, font));
-        cell.setHorizontalAlignment(Element.ALIGN_RIGHT);
-        cell.setBorder(Rectangle.NO_BORDER);
-        cell.setPadding(3f);
-        return cell;
-    }
-
-    private PdfPCell createCellRightWithBg(String text, Font font, BaseColor bg) {
-        PdfPCell cell = createCellRight(text, font);
-        cell.setBackgroundColor(bg);
-        return cell;
+    private long getNumeroLocal(Commande c) {
+        Pressing p = c.getPressing();
+        return p.getCommandes().stream().filter(x -> x.getId() <= c.getId()).count();
     }
 
     private String formatNumeroFacture(Long id) {
         return String.format("%09d", id == null ? 0L : id);
+    }
+
+    private PdfPCell createCellLeft(String text, Font font) {
+        PdfPCell c = new PdfPCell(new Phrase(text, font));
+        c.setHorizontalAlignment(Element.ALIGN_LEFT);
+        c.setBorder(Rectangle.NO_BORDER);
+        return c;
+    }
+
+    private PdfPCell createCellCenter(String text, Font font) {
+        PdfPCell c = new PdfPCell(new Phrase(text, font));
+        c.setHorizontalAlignment(Element.ALIGN_CENTER);
+        c.setBorder(Rectangle.NO_BORDER);
+        return c;
+    }
+
+    private PdfPCell createCellRight(String text, Font font) {
+        PdfPCell c = new PdfPCell(new Phrase(text, font));
+        c.setHorizontalAlignment(Element.ALIGN_RIGHT);
+        c.setBorder(Rectangle.NO_BORDER);
+        return c;
     }
 }

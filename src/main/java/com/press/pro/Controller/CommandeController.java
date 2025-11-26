@@ -1,9 +1,11 @@
 package com.press.pro.Controller;
 
 import com.press.pro.Dto.CommandeDTO;
+import com.press.pro.Dto.StatutUpdateRequest;
+import com.press.pro.Entity.Commande;
 import com.press.pro.enums.StatutCommande;
 import com.press.pro.service.CommandeService;
-import com.press.pro.service.Pdf.ListeCommande;
+import com.press.pro.service.Pdf.StatutCommandePdfService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -24,11 +26,13 @@ public class CommandeController {
     @Autowired
     private CommandeService commandeService;
 
-    @Autowired
-    private ListeCommande listeCommande; // 🔹 Injection du service PDF
+    private final StatutCommandePdfService statutPdfService;
 
-
-
+    public CommandeController(CommandeService commandeService,
+                              StatutCommandePdfService statutPdfService) {
+        this.commandeService = commandeService;
+        this.statutPdfService = statutPdfService;
+    }
 
 
     @PostMapping("/pdf")
@@ -36,13 +40,10 @@ public class CommandeController {
         return commandeService.saveCommandeEtTelechargerPdf(dto);
     }
 
-
     @GetMapping
     public List<CommandeDTO> getAllCommandes() {
         return commandeService.getAllCommandes();
     }
-
-
 
     @GetMapping("/{id}")
     public ResponseEntity<CommandeDTO> getCommandeById(@PathVariable Long id) {
@@ -56,10 +57,26 @@ public class CommandeController {
     }
 
 
-    @PutMapping("/{id}")
-    public CommandeDTO updateCommande(@PathVariable Long id, @RequestBody CommandeDTO commandeDTO) {
-        return commandeService.updateCommande(id, commandeDTO);
+    //   🔹 Changer le statut d'une commande
+    @PostMapping("/{id}/statut")
+    public ResponseEntity<byte[]> updateStatutCommande(
+            @PathVariable Long id,
+            @RequestBody StatutUpdateRequest request) {
+
+        // On ignore request.getNouveauStatut() et on force à LIVREE
+        return commandeService.updateStatutCommandeAvecPaiementPdf(
+                id,
+                request.getMontantActuel() // uniquement le montant
+        );
     }
+
+
+
+
+
+
+
+
 
 
     @GetMapping("/total")
@@ -103,47 +120,11 @@ public class CommandeController {
         return commandeService.getTotalImpayes();
     }
 
-    // 🔹 Changer le statut d'une commande
-    @PostMapping("/{id}/statut")
-    public CommandeDTO updateStatutAvecPaiement(
-            @PathVariable Long id,
-            @RequestBody StatutPaiementRequest request) {
-        return commandeService.updateStatutCommandeAvecPaiement(
-                id,
-                request.getStatut(),
-                request.getMontantActuel()
-        );
-    }
-
-
-    // --- DTO pour la requête ---
-    public static class StatutPaiementRequest {
-        private StatutCommande statut;
-        private double montantActuel;
-
-        public StatutCommande getStatut() { return statut; }
-        public void setStatut(StatutCommande statut) { this.statut = statut; }
-
-        public double getMontantActuel() { return montantActuel; }
-        public void setMontantActuel(double montantActuel) { this.montantActuel = montantActuel; }
-    }
-
     @GetMapping("/totaux")
     public BigDecimal getChiffreAffairesTotal() {
         return commandeService.getChiffreAffairesTotal();
     }
 
 
-    // 🔹 Nouveau endpoint pour le PDF
-    @GetMapping("/pdf")
-    public ResponseEntity<byte[]> exportPdf() {
-        byte[] pdfBytes = listeCommande.generatePdf();
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_PDF);
-        headers.setContentDispositionFormData("filename", "commandes.pdf");
-
-        return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
-    }
 
 }

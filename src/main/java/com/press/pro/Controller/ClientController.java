@@ -5,8 +5,6 @@ import com.press.pro.Entity.Utilisateur;
 import com.press.pro.repository.UtilisateurRepository;
 import com.press.pro.service.ClientService;
 import com.press.pro.service.JwtService;
-import com.press.pro.service.Pdf.ListeClient;
-import com.press.pro.service.Pdf.ListeCommande;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,8 +31,7 @@ public class ClientController {
     @Autowired
     private UtilisateurRepository utilisateurRepository;
 
-    @Autowired
-    private ListeClient listeClient;
+
 
 
     private Utilisateur getUserFromToken(String token) {
@@ -88,15 +85,5 @@ public class ClientController {
         return ResponseEntity.ok("Client supprimé avec succès");
     }
 
-    // 🔹 Nouveau endpoint pour le PDF
-    @GetMapping("/pdf")
-    public ResponseEntity<byte[]> exportPdf() {
-        byte[] pdfBytes = listeClient.generatePdf();
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_PDF);
-        headers.setContentDispositionFormData("filename", "commandes.pdf");
-
-        return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
-    }
 }
