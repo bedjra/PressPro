@@ -143,13 +143,9 @@ public class CommandeService {
 
 
     // Sauvegarde + génération PDF
-
-
     public ResponseEntity<byte[]> saveCommandeEtTelechargerPdf(CommandeDTO dto) {
-
-        Utilisateur user = getUserConnecte();  // ➤ obligatoire maintenant
-
         Commande saved = saveCommandeEntity(dto);
+        Utilisateur user = getUserConnecte();
 
         byte[] pdf = commandePdfService.genererCommandePdf(saved, user);
 
@@ -158,6 +154,7 @@ public class CommandeService {
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(pdf);
     }
+
 
 
     // Conversion entity -> DTO

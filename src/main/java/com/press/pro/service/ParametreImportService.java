@@ -45,11 +45,6 @@ public class ParametreImportService {
 
         Pressing pressing = getPressingUser();
 
-        // ❌ SUPPRIMÉ : on importera même si des paramètres existent
-        // if (!parametreRepository.findAllByPressingId(pressing.getId()).isEmpty()) {
-        //     return;
-        // }
-
         List<Parametre> liste = new ArrayList<>();
 
         Object[][] data = {
@@ -395,5 +390,8 @@ public class ParametreImportService {
 
         parametreRepository.saveAll(liste);
     }
+
+
+
 
 }

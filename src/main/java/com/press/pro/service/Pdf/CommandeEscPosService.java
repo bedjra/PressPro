@@ -2,11 +2,7 @@
 //
 //import com.itextpdf.text.*;
 //import com.itextpdf.text.pdf.*;
-//import com.itextpdf.text.pdf.draw.LineSeparator;
-//import com.press.pro.Entity.Client;
-//import com.press.pro.Entity.Commande;
-//import com.press.pro.Entity.Parametre;
-//import com.press.pro.Entity.Pressing;
+//import com.press.pro.Entity.*;
 //import org.springframework.stereotype.Service;
 //
 //import java.io.ByteArrayOutputStream;
@@ -14,262 +10,223 @@
 //import java.nio.file.Files;
 //import java.nio.file.Paths;
 //import java.time.format.DateTimeFormatter;
-//import java.util.stream.Stream;
 //
 //@Service
-//public class CommandePdfService {
+//public class CommandePdfThermiqueService {
 //
 //    private static final String PDF_BASE_FOLDER = "pdfCommandes/";
-//    private static final String LOGO_FOLDER = "uploads/";
 //
-//    public byte[] genererCommandePdf(Commande commande) {
+//    public byte[] genererCommandePdfThermique(Commande commande, Utilisateur user) {
 //        ByteArrayOutputStream out = new ByteArrayOutputStream();
-//        Document document = new Document(PageSize.A6, 10, 10, 10, 10);
+//        // Largeur typique pour ticket thermique (58 mm ~ 165 pt)
+//        Rectangle receiptSize = new Rectangle(165, 600);
+//        Document document = new Document(receiptSize, 5, 5, 5, 5);
 //
 //        try {
 //            PdfWriter.getInstance(document, out);
 //            document.open();
 //
-//            // --- Fonts ---
-//            Font fontTitre = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14);
-//            Font fontSousTitre = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10);
-//            Font fontInfo = FontFactory.getFont(FontFactory.HELVETICA, 7);
-//            Font fontTableHeader = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 7);
-//            Font fontTable = FontFactory.getFont(FontFactory.HELVETICA, 7);
-//            Font fontMontant = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9);
+//            // Polices lisibles pour thermique
+//            Font fontBold = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10);
+//            Font fontNormal = FontFactory.getFont(FontFactory.HELVETICA, 9);
+//            Font fontSmall = FontFactory.getFont(FontFactory.HELVETICA, 8);
 //
 //            Pressing pressing = commande.getPressing();
-//
-//            // --- ENTETE ---
-//            PdfPTable headerTable = new PdfPTable(2);
-//            headerTable.setWidthPercentage(100);
-//            headerTable.setWidths(new float[]{1f, 3f});
-//            headerTable.getDefaultCell().setBorder(Rectangle.NO_BORDER);
-//
-//            // Logo
-//            PdfPCell logoCell = new PdfPCell();
-//            logoCell.setBorder(Rectangle.NO_BORDER);
-//            logoCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
-//            try {
-//                if (pressing.getLogo() != null && pressing.getLogo().length > 0) {
-//                    Image logo = Image.getInstance(pressing.getLogo());
-//                    logo.scaleToFit(40, 40);
-//                    logoCell.addElement(logo);
-//                }
-//            } catch (Exception e) {
-//                System.out.println("Erreur chargement logo : " + e.getMessage());
-//            }
-//            headerTable.addCell(logoCell);
-//
-//            // Info pressing
-//            PdfPCell infoCell = new PdfPCell();
-//            infoCell.setBorder(Rectangle.NO_BORDER);
-//            infoCell.setPaddingLeft(5f);
-//            infoCell.addElement(new Paragraph(pressing.getNom(), fontTitre));
-//            infoCell.addElement(new Paragraph(pressing.getAdresse(), fontInfo));
-//            infoCell.addElement(new Paragraph("Tél: " + pressing.getTelephone(), fontInfo));
-//            if (pressing.getCel() != null && !pressing.getCel().isBlank())
-//                infoCell.addElement(new Paragraph("Cel: " + pressing.getCel(), fontInfo));
-//            if (pressing.getEmail() != null)
-//                infoCell.addElement(new Paragraph(pressing.getEmail(), fontInfo));
-//            headerTable.addCell(infoCell);
-//
-//            document.add(headerTable);
-//            document.add(Chunk.NEWLINE);
-//            document.add(new LineSeparator());
-//            document.add(Chunk.NEWLINE);
-//
-//            // --- NUMERO LOCAL DU REÇU ---
-//            Long numeroLocal = getNumeroLocal(commande);
-//            Paragraph factureTitle = new Paragraph(
-//                    "Reçu N° " + formatNumeroFacture(numeroLocal),
-//                    fontSousTitre
-//            );
-//            factureTitle.setAlignment(Element.ALIGN_CENTER);
-//            factureTitle.setSpacingAfter(5);
-//            document.add(factureTitle);
-//
-//            // --- INFO CLIENT ---
-//            PdfPTable topInfo = new PdfPTable(2);
-//            topInfo.setWidthPercentage(100);
-//            topInfo.setWidths(new float[]{2f, 1f});
-//            topInfo.getDefaultCell().setBorder(Rectangle.NO_BORDER);
-//
 //            Client client = commande.getClient();
 //
-//            // Gauche : Client
-//            PdfPTable left = new PdfPTable(1);
-//            left.getDefaultCell().setBorder(Rectangle.NO_BORDER);
-//            left.addCell(createCellNoBorder("Client : " + (client != null ? client.getNom() : "CLIENT DIVERS"), fontTable));
-//            left.addCell(createCellNoBorder("Adresse : " + (client != null && client.getAdresse() != null ? client.getAdresse() : "-"), fontInfo));
-//            topInfo.addCell(left);
+//            // ========================
+//            // ENTETE SIMPLE NOIR ET BLANC
+//            // ========================
+//            Paragraph header = new Paragraph(pressing.getNom(), fontBold);
+//            header.setAlignment(Element.ALIGN_CENTER);
+//            document.add(header);
 //
-//            // Droite : Dates
-//            PdfPTable right = new PdfPTable(1);
-//            right.getDefaultCell().setBorder(Rectangle.NO_BORDER);
-//            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+//            if (pressing.getAdresse() != null && !pressing.getAdresse().isEmpty())
+//                document.add(new Paragraph(pressing.getAdresse(), fontSmall));
+//            document.add(new Paragraph("☎ " + pressing.getTelephone(), fontSmall));
+//            document.add(new Paragraph("✉ " + (pressing.getEmail() != null ? pressing.getEmail() : "-"), fontSmall));
 //
-//            String dateReception = commande.getDateReception() != null
-//                    ? commande.getDateReception().format(formatter)
-//                    : "-";
-//            String dateLivraison = commande.getDateLivraison() != null
-//                    ? commande.getDateLivraison().format(formatter)
-//                    : "-";
+//            addSeparatorLine(document);
 //
-//            right.addCell(createCellNoBorder("Réception : " + dateReception, fontInfo));
-//            right.addCell(createCellNoBorder("Livraison : " + dateLivraison, fontInfo));
-//            topInfo.addCell(right);
+//            // ========================
+//            // NUMERO DE COMMANDE
+//            // ========================
+//            Long numeroLocal = getNumeroLocal(commande);
+//            Paragraph recuNo = new Paragraph("BON DE COMMANDE N° " + formatNumeroFacture(numeroLocal), fontBold);
+//            recuNo.setAlignment(Element.ALIGN_CENTER);
+//            document.add(recuNo);
 //
-//            document.add(topInfo);
+//            addSeparatorLine(document);
 //
-//            // --- TABLEAU COMMANDE ---
-//            // --- TABLEAU COMMANDE ---
-//            PdfPTable table = new PdfPTable(5);
-//            table.setWidthPercentage(100);
-//            table.setWidths(new float[]{3f, 1f, 1f, 1f, 1f}); // Article, Qté, Prix Unitaire, Montant, Remise
+//            // ========================
+//            // CLIENT ET DATES
+//            // ========================
+//            DateTimeFormatter df = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+//            PdfPTable infoTable = new PdfPTable(2);
+//            infoTable.setWidthPercentage(100);
+//            infoTable.setWidths(new float[]{2f, 1.5f});
 //
-//// --- Header ---
-//            Stream.of("Article", "Qté", "P.U", "Montant", "Remise")
-//                    .forEach(h -> {
-//                        PdfPCell hd = new PdfPCell(new Phrase(h, fontTableHeader));
-//                        hd.setHorizontalAlignment(Element.ALIGN_CENTER);
-//                        hd.setPadding(3f);
-//                        hd.setBackgroundColor(BaseColor.LIGHT_GRAY);
-//                        table.addCell(hd);
-//                    });
+//            // Client
+//            PdfPCell clientCell = new PdfPCell();
+//            clientCell.setBorder(Rectangle.NO_BORDER);
+//            clientCell.addElement(new Paragraph("Client:", fontBold));
+//            clientCell.addElement(new Paragraph(client != null ? client.getNom() : "CLIENT DIVERS", fontNormal));
+//            if (client != null && client.getAdresse() != null)
+//                clientCell.addElement(new Paragraph(client.getAdresse(), fontSmall));
+//            infoTable.addCell(clientCell);
 //
-//// --- Ligne de commande ---
-//            Parametre param = commande.getParametre();
-//            String article = param != null ? param.getArticle() : "-";
-//            double prixUnitaire = param != null ? param.getPrix() : 0.0;
-//            int qte = commande.getQte();
-//            double remiseTotale = commande.getRemise();
-//            double montant = prixUnitaire * qte;
+//            // Dates
+//            PdfPCell dateCell = new PdfPCell();
+//            dateCell.setBorder(Rectangle.NO_BORDER);
+//            dateCell.addElement(new Paragraph("Réception: " +
+//                    (commande.getDateReception() != null ? commande.getDateReception().format(df) : "-"), fontNormal));
+//            dateCell.addElement(new Paragraph("Livraison: " +
+//                    (commande.getDateLivraison() != null ? commande.getDateLivraison().format(df) : "-"), fontNormal));
+//            infoTable.addCell(dateCell);
 //
-//            table.addCell(createCellLeft(article, fontTable));
-//            table.addCell(createCellCenter(String.valueOf(qte), fontTable));
-//            table.addCell(createCellRight(String.format("%.0f F", prixUnitaire), fontTable));
-//            table.addCell(createCellRight(String.format("%.0f F", montant), fontTable));
-//            table.addCell(createCellRight(String.format("%.0f F", remiseTotale), fontTable));
+//            document.add(infoTable);
+//            addSeparatorLine(document);
 //
-//            document.add(table);
+//            // ========================
+//            // LIGNES DE COMMANDE
+//            // ========================
+//            PdfPTable lignesTable = new PdfPTable(4);
+//            lignesTable.setWidthPercentage(100);
+//            lignesTable.setWidths(new float[]{3f, 0.7f, 1f, 1.2f});
 //
+//            addSimpleTableHeader(lignesTable, new String[]{"Article", "Qté", "P.U", "Montant"}, fontBold);
 //
-//            // --- TOTAUX ---
-//            PdfPTable outer = new PdfPTable(2);
-//            outer.setWidthPercentage(100);
-//            outer.setWidths(new float[]{1.3f, 1f});
-//            outer.getDefaultCell().setBorder(Rectangle.NO_BORDER);
-//            outer.setSpacingBefore(10f);
+//            for (CommandeLigne ligne : commande.getLignes()) {
+//                Parametre param = ligne.getParametre();
+//                String article = param != null ? param.getArticle() : "-";
+//                String ab = param != null ? abregerService(param.getService()) : "-";
+//                double pu = param != null ? param.getPrix() : 0;
+//                double montant = ligne.getQuantite() * pu;
 //
-//            PdfPCell empty = new PdfPCell(new Phrase(""));
-//            empty.setBorder(Rectangle.NO_BORDER);
-//            outer.addCell(empty);
+//                lignesTable.addCell(createCellLeft(article + " (" + ab + ")", fontNormal));
+//                lignesTable.addCell(createCellCenter(String.valueOf(ligne.getQuantite()), fontNormal));
+//                lignesTable.addCell(createCellRight(String.format("%.0f F", pu), fontNormal));
+//                lignesTable.addCell(createCellRight(String.format("%.0f F", montant), fontBold));
+//            }
 //
-//            PdfPTable totaux = new PdfPTable(2);
-//            totaux.setWidthPercentage(100);
-//            totaux.setWidths(new float[]{2f, 1f});
+//            document.add(lignesTable);
+//            addSeparatorLine(document);
 //
-//            double netCommercial = montant - remiseTotale;
-//            double montantTTC = netCommercial;
-//            double montantPaye = commande.getMontantPaye();
-//            double resteAPayer = montantTTC - montantPaye;
+//            // ========================
+//            // TOTAUX
+//            // ========================
+//            double total = commande.getLignes().stream()
+//                    .mapToDouble(l -> (l.getParametre() != null ? l.getParametre().getPrix() : 0) * l.getQuantite())
+//                    .sum();
+//            double remise = commande.getRemise();
+//            double net = total - remise;
+//            double paye = commande.getMontantPaye();
+//            double reste = net - paye;
 //
-//            // Montant HT
-//            totaux.addCell(createCellLeftWithBg("Montant HT", fontTable, BaseColor.LIGHT_GRAY));
-//            totaux.addCell(createCellRightWithBg(String.format("%.0f F", montantTTC), fontTable, BaseColor.LIGHT_GRAY));
+//            PdfPTable totauxTable = new PdfPTable(2);
+//            totauxTable.setWidthPercentage(100);
+//            totauxTable.setWidths(new float[]{2f, 1.2f});
 //
-//// Montant payé
-//            totaux.addCell(createCellLeft("Montant Payé", fontTable));
-//            totaux.addCell(createCellRight(String.format("%.0f F", montantPaye), fontTable));
+//            addTotalRow(totauxTable, "Montant Total", total, fontNormal);
+//            if (remise > 0) addTotalRow(totauxTable, "Remise", remise, fontNormal);
+//            addTotalRow(totauxTable, "Net à Payer", net, fontBold);
+//            if (paye > 0) addTotalRow(totauxTable, "Montant Payé", paye, fontNormal);
+//            addTotalRow(totauxTable, "Reste à Payer", reste, fontBold);
 //
-//// Reste à payer
-//            totaux.addCell(createCellLeft("Reste à Payer", fontTableHeader));
-//            totaux.addCell(createCellRight(String.format("%.0f F", resteAPayer), fontMontant));
+//            document.add(totauxTable);
 //
-//            PdfPCell totauxCell = new PdfPCell(totaux);
-//            totauxCell.setBorder(Rectangle.NO_BORDER);
-//            outer.addCell(totauxCell);
-//            document.add(outer);
+//            addSeparatorLine(document);
 //
-//            // --- Signature ---
-//            Paragraph signature = new Paragraph("Signature", fontInfo);
-//            signature.setAlignment(Element.ALIGN_RIGHT);
-//            signature.setSpacingBefore(10);
-//            document.add(signature);
+//            // ========================
+//            // MESSAGE DE FIN
+//            // ========================
+//            Paragraph userInfo = new Paragraph("Émis par : " + user.getEmail(), fontSmall);
+//            userInfo.setAlignment(Element.ALIGN_CENTER);
+//            document.add(userInfo);
+//
+//            Paragraph merci = new Paragraph("Merci pour votre confiance!", fontBold);
+//            merci.setAlignment(Element.ALIGN_CENTER);
+//            document.add(merci);
 //
 //            document.close();
 //
-//            // --- Enregistrement PDF ---
-//            String pressingFolder = PDF_BASE_FOLDER + pressing.getNom().replaceAll("[^a-zA-Z0-9]", "_") + "/";
-//            Files.createDirectories(Paths.get(pressingFolder));
-//            String filePath = pressingFolder + "commande_" + commande.getId() + ".pdf";
-//
-//            try (FileOutputStream fos = new FileOutputStream(filePath)) {
+//            // SAVE PDF
+//            String folder = PDF_BASE_FOLDER + pressing.getNom().replaceAll("[^a-zA-Z0-9]", "_") + "/";
+//            Files.createDirectories(Paths.get(folder));
+//            try (FileOutputStream fos = new FileOutputStream(folder + "commande_" + commande.getId() + ".pdf")) {
 //                fos.write(out.toByteArray());
 //            }
 //
 //        } catch (Exception e) {
-//            throw new RuntimeException("Erreur PDF : " + e.getMessage(), e);
+//            throw new RuntimeException("Erreur PDF thermique : " + e.getMessage(), e);
 //        }
 //
 //        return out.toByteArray();
 //    }
 //
-//    // --- Génération numéro local ---
-//    private long getNumeroLocal(Commande commande) {
-//        Pressing pressing = commande.getPressing();
-//        return pressing.getCommandes()
-//                .stream()
-//                .filter(c -> c.getId() <= commande.getId())
-//                .count();
+//    // ========================
+//    // MÉTHODES UTILES
+//    // ========================
+//
+//    private void addSeparatorLine(Document doc) throws DocumentException {
+//        LineSeparator line = new LineSeparator();
+//        line.setLineWidth(1f);
+//        doc.add(new Chunk(line));
 //    }
 //
-//    // --- Utilitaires cellules ---
-//    private PdfPCell createCellNoBorder(String text, Font font) {
-//        PdfPCell cell = new PdfPCell(new Phrase(text, font));
-//        cell.setBorder(Rectangle.NO_BORDER);
-//        cell.setPadding(3f);
-//        return cell;
+//    private void addSimpleTableHeader(PdfPTable table, String[] headers, Font font) {
+//        for (String h : headers) {
+//            PdfPCell c = new PdfPCell(new Phrase(h, font));
+//            c.setHorizontalAlignment(Element.ALIGN_CENTER);
+//            c.setBorder(Rectangle.BOX);
+//            table.addCell(c);
+//        }
 //    }
 //
-//    private PdfPCell createCellLeft(String text, Font font) {
-//        PdfPCell cell = new PdfPCell(new Phrase(text, font));
-//        cell.setHorizontalAlignment(Element.ALIGN_LEFT);
-//        cell.setBorder(Rectangle.NO_BORDER);
-//        cell.setPadding(3f);
-//        return cell;
+//    private void addTotalRow(PdfPTable table, String label, double amount, Font font) {
+//        table.addCell(createCellLeft(label, font));
+//        table.addCell(createCellRight(String.format("%.0f F", amount), font));
 //    }
 //
-//    private PdfPCell createCellLeftWithBg(String text, Font font, BaseColor bg) {
-//        PdfPCell cell = createCellLeft(text, font);
-//        cell.setBackgroundColor(bg);
-//        return cell;
+//    private String abregerService(String s) {
+//        if (s == null || s.isBlank()) return "-";
+//        s = s.toUpperCase().replace("+", " ");
+//        String[] mots = s.split("\\s+");
+//        StringBuilder a = new StringBuilder();
+//        for (String m : mots) {
+//            if (!m.isBlank()) a.append(m.charAt(0));
+//            if (a.length() == 3) break;
+//        }
+//        return a.toString();
 //    }
 //
-//    private PdfPCell createCellCenter(String text, Font font) {
-//        PdfPCell cell = new PdfPCell(new Phrase(text, font));
-//        cell.setHorizontalAlignment(Element.ALIGN_CENTER);
-//        cell.setBorder(Rectangle.NO_BORDER);
-//        cell.setPadding(3f);
-//        return cell;
-//    }
-//
-//    private PdfPCell createCellRight(String text, Font font) {
-//        PdfPCell cell = new PdfPCell(new Phrase(text, font));
-//        cell.setHorizontalAlignment(Element.ALIGN_RIGHT);
-//        cell.setBorder(Rectangle.NO_BORDER);
-//        cell.setPadding(3f);
-//        return cell;
-//    }
-//
-//    private PdfPCell createCellRightWithBg(String text, Font font, BaseColor bg) {
-//        PdfPCell cell = createCellRight(text, font);
-//        cell.setBackgroundColor(bg);
-//        return cell;
+//    private long getNumeroLocal(Commande c) {
+//        Pressing p = c.getPressing();
+//        return p.getCommandes().stream().filter(x -> x.getId() <= c.getId()).count();
 //    }
 //
 //    private String formatNumeroFacture(Long id) {
 //        return String.format("%09d", id == null ? 0L : id);
+//    }
+//
+//    private PdfPCell createCellLeft(String text, Font font) {
+//        PdfPCell c = new PdfPCell(new Phrase(text, font));
+//        c.setBorder(Rectangle.NO_BORDER);
+//        c.setHorizontalAlignment(Element.ALIGN_LEFT);
+//        return c;
+//    }
+//
+//    private PdfPCell createCellCenter(String text, Font font) {
+//        PdfPCell c = new PdfPCell(new Phrase(text, font));
+//        c.setBorder(Rectangle.NO_BORDER);
+//        c.setHorizontalAlignment(Element.ALIGN_CENTER);
+//        return c;
+//    }
+//
+//    private PdfPCell createCellRight(String text, Font font) {
+//        PdfPCell c = new PdfPCell(new Phrase(text, font));
+//        c.setBorder(Rectangle.NO_BORDER);
+//        c.setHorizontalAlignment(Element.ALIGN_RIGHT);
+//        return c;
 //    }
 //}
