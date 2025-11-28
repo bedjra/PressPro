@@ -125,14 +125,14 @@ public class TarifKiloService {
                 {"1Kg-4Kg", 700, 1100, 1600, 2400},
                 {"5Kg-9Kg", 600, 1000, 1400, 2100},
                 {"10Kg-20Kg", 500, 800, 1200, 1900},
-                {"Supérieur à 20Kg", 450, 700, 1000, 1700}
+                {"Sup à 20Kg", 450, 700, 1000, 1700}
         };
 
         String[] SERVICES = {
-                "LAVAGE_SIMPLE",
-                "LAVAGE_SECHAGE",
-                "LAVAGE_SECHAGE_REPASSAGE",
-                "LAVAGE_EXPRESS"
+                "Lavage seul",
+                "Lavage + Séchage",
+                "L+S + Repassage",
+                "Lavage Express"
         };
 
         for (Object[] row : DATA) {

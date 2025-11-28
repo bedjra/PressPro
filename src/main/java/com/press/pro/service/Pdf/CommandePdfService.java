@@ -185,31 +185,48 @@ public class CommandePdfService {
             document.add(clientDate);
 
             // =======================
-            //       LIGNES DE COMMANDE AMÉLIORÉES
-            // =======================
+// LIGNES DE COMMANDE (ARTICLE OU KILO)
+// =======================
             PdfPTable lignesTable = new PdfPTable(4);
             lignesTable.setWidthPercentage(100);
             lignesTable.setWidths(new float[]{3.5f, 0.8f, 1.2f, 1.5f});
             lignesTable.setSpacingAfter(8f);
 
-            // En-tête avec style
-            addStyledTableHeader(lignesTable, new String[]{"Article", "Qté", "P.U", "Montant"}, fontBold);
+// En-tête
+            addStyledTableHeader(lignesTable, new String[]{"Article ", "Qté ", "P.U", "Montant"}, fontBold);
 
-            // Lignes avec alternance de couleurs
             int index = 0;
             for (CommandeLigne ligne : commande.getLignes()) {
-                Parametre param = ligne.getParametre();
                 BaseColor bgColor = (index % 2 == 0) ? BaseColor.WHITE : new BaseColor(248, 248, 248);
 
-                String ab = param != null ? abregerService(param.getService()) : "-";
-                String article = param != null ? param.getArticle() : "-";
-                String articleFinal = article + " (" + ab + ")";
+                String nomItem;
+                String qteStr;
+                double pu;
+                double montantNet;
 
-                double pu = param != null ? param.getPrix() : 0;
-                double montantNet = ligne.getQuantite() * pu;
+                if (ligne.getParametre() != null) {
+                    // Mode article
+                    Parametre param = ligne.getParametre();
+                    nomItem = param.getArticle() + " (" + abregerService(param.getService()) + ")";
+                    qteStr = String.valueOf(ligne.getQuantite());
+                    pu = param.getPrix();
+                } else if (ligne.getTarifKilo() != null) {
+                    // Mode kilo
+                    TarifKilo tarif = ligne.getTarifKilo();
+                    nomItem = tarif.getTranchePoids() + " (" + abregerService(tarif.getService()) + ")";
+                    qteStr = ligne.getPoids() != null ? String.format("%.2f", ligne.getPoids()) : "0";
+                    pu = tarif.getPrix();
+                } else {
+                    nomItem = "-";
+                    qteStr = "-";
+                    pu = 0;
+                }
 
-                lignesTable.addCell(createStyledCell(articleFinal, fontNormal, Element.ALIGN_LEFT, bgColor));
-                lignesTable.addCell(createStyledCell(String.valueOf(ligne.getQuantite()), fontNormal, Element.ALIGN_CENTER, bgColor));
+                // Montant net cohérent avec backend
+                montantNet = ligne.getMontantNet();
+
+                lignesTable.addCell(createStyledCell(nomItem, fontNormal, Element.ALIGN_LEFT, bgColor));
+                lignesTable.addCell(createStyledCell(qteStr, fontNormal, Element.ALIGN_CENTER, bgColor));
                 lignesTable.addCell(createStyledCell(String.format("%.0f F", pu), fontNormal, Element.ALIGN_RIGHT, bgColor));
                 lignesTable.addCell(createStyledCell(String.format("%.0f F", montantNet), fontBold, Element.ALIGN_RIGHT, bgColor));
 
@@ -218,23 +235,15 @@ public class CommandePdfService {
 
             document.add(lignesTable);
 
-            // Ligne de séparation avant totaux
-            addSeparatorLine(document, 0.5f);
-
-            // =======================
-            //        TOTAUX AMÉLIORÉS
-            // =======================
-            double montantTotalBrut = commande.getLignes().stream()
-                    .mapToDouble(ligne -> {
-                        double pu = ligne.getParametre() != null ? ligne.getParametre().getPrix() : 0;
-                        return ligne.getQuantite() * pu;
-                    })
+// =======================
+// TOTAUX
+// =======================
+            double montantTotalNet = commande.getLignes().stream()
+                    .mapToDouble(CommandeLigne::getMontantNet)
                     .sum();
 
-            double remise = commande.getRemise();
-            double montantApresRemise = montantTotalBrut - remise;
             double paye = commande.getMontantPaye();
-            double resteAPayer = montantApresRemise - paye;
+            double resteAPayer = montantTotalNet - paye;
 
             PdfPTable totaux = new PdfPTable(2);
             totaux.setWidthPercentage(100);
@@ -242,35 +251,20 @@ public class CommandePdfService {
             totaux.setSpacingBefore(5f);
             totaux.setSpacingAfter(8f);
 
-            // Sous-total
-            totaux.addCell(createTotalCell("Montant Total", fontNormal, false));
-            totaux.addCell(createTotalCell(String.format("%.0f F", montantTotalBrut), fontNormal, true));
+            totaux.addCell(createTotalCell("Montant Total Net", fontBold, false));
+            totaux.addCell(createTotalCell(String.format("%.0f F", montantTotalNet), fontBold, true));
 
-            // Remise
-            if (remise > 0) {
-                totaux.addCell(createTotalCell("Remise", fontNormal, false));
-                totaux.addCell(createTotalCell(String.format(" %.0f F", remise), fontNormal, true));
-            }
-
-            // Net à payer
-            totaux.addCell(createTotalCell("Net à Payer", fontBold, false, new BaseColor(230, 230, 230)));
-            totaux.addCell(createTotalCell(String.format("%.0f F", montantApresRemise), fontBold, true, new BaseColor(230, 230, 230)));
-
-            // Montant payé
             if (paye > 0) {
                 totaux.addCell(createTotalCell("Montant Payé", fontNormal, false));
                 totaux.addCell(createTotalCell(String.format("%.0f F", paye), fontNormal, true));
             }
 
-            // Reste à payer - en surbrillance si > 0
             BaseColor resteBg = resteAPayer > 0 ? new BaseColor(255, 245, 230) : new BaseColor(230, 255, 230);
             totaux.addCell(createTotalCell("Reste à Payer", fontBold, false, resteBg));
             totaux.addCell(createTotalCell(String.format("%.0f F", resteAPayer), fontBold, true, resteBg));
 
             document.add(totaux);
 
-            // Ligne de séparation finale
-            addSeparatorLine(document, 1f);
 
             // =======================
             // MESSAGE DE FIN

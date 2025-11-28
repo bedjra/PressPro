@@ -1,6 +1,6 @@
 package com.press.pro.Controller;
 
-import com.press.pro.Dto.CommandeDTO;
+import com.press.pro.Dto.DtoCommande;
 import com.press.pro.Dto.StatutUpdateRequest;
 import com.press.pro.Entity.Commande;
 import com.press.pro.enums.StatutCommande;
@@ -36,20 +36,20 @@ public class CommandeController {
 
 
     @PostMapping("/pdf")
-    public ResponseEntity<byte[]> createCommandeAvecPdf(@RequestBody CommandeDTO dto) {
+    public ResponseEntity<byte[]> createCommandeAvecPdf(@RequestBody DtoCommande dto) {
         return commandeService.saveCommandeEtTelechargerPdf(dto);
     }
 
     @GetMapping
-    public List<CommandeDTO> getAllCommandes() {
+    public List<DtoCommande> getAllCommandes() {
         return commandeService.getAllCommandes();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<CommandeDTO> getCommandeById(@PathVariable Long id) {
+    public ResponseEntity<DtoCommande> getCommandeById(@PathVariable Long id) {
         try {
-            CommandeDTO commandeDTO = commandeService.getCommandeById(id);
-            return ResponseEntity.ok(commandeDTO);
+            DtoCommande DtoCommande = commandeService.getCommandeById(id);
+            return ResponseEntity.ok(DtoCommande);
         } catch (RuntimeException ex) {
             // On peut renvoyer un 404 si commande introuvable ou accès refusé
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);

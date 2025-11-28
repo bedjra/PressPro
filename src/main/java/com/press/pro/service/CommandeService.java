@@ -1,6 +1,6 @@
 package com.press.pro.service;
 
-import com.press.pro.Dto.CommandeDTO;
+import com.press.pro.Dto.DtoCommande;
 import com.press.pro.Entity.*;
 import com.press.pro.enums.StatutCommande;
 import com.press.pro.enums.StatutPaiement;
@@ -46,6 +46,9 @@ public class CommandeService {
     @Autowired
     private StatutCommandePdfService statutCommandePdfService;
 
+    @Autowired
+    private TarifKiloRepository tarifKiloRepository;
+
 
     // Récupérer l'utilisateur connecté
     private Utilisateur getUserConnecte() {
@@ -58,23 +61,35 @@ public class CommandeService {
     }
 
     // Sauvegarde d'une commande
-    public Commande saveCommandeEntity(CommandeDTO dto) {
+    // ------------------------------------------------------
+// SAUVEGARDE D’UNE COMMANDE (ARTICLE OU KILO)
+// ------------------------------------------------------
+    @Transactional
+    public Commande saveCommandeEntity(DtoCommande dto) {
 
         Utilisateur user = getUserConnecte();
 
+        // Vérification du client
         if (dto.getClientId() == null)
             throw new RuntimeException("Le client est obligatoire");
 
-        if (dto.getParametreIds() == null || dto.getParametreIds().isEmpty())
-            throw new RuntimeException("Au moins un paramètre est obligatoire");
+        // Vérification exclusivité article/kilo
+        boolean hasArticles = dto.getParametreIds() != null && !dto.getParametreIds().isEmpty();
+        boolean hasKilos = dto.getTarifKiloIds() != null && !dto.getTarifKiloIds().isEmpty();
 
-        if (dto.getQtes() == null || dto.getQtes().size() != dto.getParametreIds().size())
-            throw new RuntimeException("Les quantités doivent correspondre aux paramètres");
+        if (hasArticles && hasKilos) {
+            throw new RuntimeException("Vous ne pouvez pas mélanger articles et kilos dans une même commande !");
+        }
+        if (!hasArticles && !hasKilos) {
+            throw new RuntimeException("La commande doit contenir au moins un article ou un tarif kilo !");
+        }
 
+        // -------------------------------
         // Création de la commande
+        // -------------------------------
         Commande commande = new Commande();
         commande.setPressing(user.getPressing());
-        commande.setStatut(StatutCommande.EN_COURS); // statut automatique
+        commande.setStatut(StatutCommande.EN_COURS);
         commande.setDateReception(dto.getDateReception());
         commande.setDateLivraison(dto.getDateLivraison());
         commande.setRemise(dto.getRemiseGlobale() != null ? dto.getRemiseGlobale() : 0);
@@ -84,33 +99,72 @@ public class CommandeService {
                 .orElseThrow(() -> new RuntimeException("Client introuvable !"));
         commande.setClient(client);
 
-        // Sauvegarde initiale
+        // Sauvegarde initiale pour récupérer l'id
         commande = commandeRepository.save(commande);
 
         List<CommandeLigne> lignes = new ArrayList<>();
 
-        // Création des lignes
-        for (int i = 0; i < dto.getParametreIds().size(); i++) {
-            Long paramId = dto.getParametreIds().get(i);
-            int qte = dto.getQtes().get(i);
+        // --------------------------------------------------
+        // 🔥 CAS 1 : LIGNES PAR ARTICLE
+        // --------------------------------------------------
+        if (hasArticles) {
 
-            Parametre param = parametreRepository.findById(paramId)
-                    .orElseThrow(() -> new RuntimeException("Paramètre introuvable : " + paramId));
+            if (dto.getQuantites() == null || dto.getQuantites().size() != dto.getParametreIds().size())
+                throw new RuntimeException("Les quantités doivent correspondre aux paramètres");
 
-            CommandeLigne ligne = new CommandeLigne();
-            ligne.setCommande(commande);
-            ligne.setParametre(param);
-            ligne.setQuantite(qte);
+            for (int i = 0; i < dto.getParametreIds().size(); i++) {
+                Long paramId = dto.getParametreIds().get(i);
+                int qte = dto.getQuantites().get(i);
 
-            ligne.recalcMontantBrut(); // calcule automatiquement le brut
+                Parametre param = parametreRepository.findById(paramId)
+                        .orElseThrow(() -> new RuntimeException("Paramètre introuvable : " + paramId));
 
-            commandeLigneRepository.save(ligne);
-            lignes.add(ligne);
+                CommandeLigne ligne = new CommandeLigne();
+                ligne.setCommande(commande);
+                ligne.setParametre(param);
+                ligne.setQuantite(qte);
+
+                // calcul automatique du brut
+                ligne.recalcMontantBrut();
+
+                commandeLigneRepository.save(ligne);
+                lignes.add(ligne);
+            }
+        }
+
+        // --------------------------------------------------
+        // 🔥 CAS 2 : LIGNES PAR KILO
+        // --------------------------------------------------
+        if (hasKilos) {
+
+            if (dto.getPoids() == null || dto.getPoids().size() != dto.getTarifKiloIds().size())
+                throw new RuntimeException("Les poids doivent correspondre aux tarifs kilo");
+
+            for (int i = 0; i < dto.getTarifKiloIds().size(); i++) {
+                Long tarifId = dto.getTarifKiloIds().get(i);
+                Double kg = dto.getPoids().get(i);
+
+                TarifKilo tarif = tarifKiloRepository.findById(tarifId)
+                        .orElseThrow(() -> new RuntimeException("Tarif kilo introuvable : " + tarifId));
+
+                CommandeLigne ligne = new CommandeLigne();
+                ligne.setCommande(commande);
+                ligne.setTarifKilo(tarif);
+                ligne.setPoids(kg);
+
+                // montant brut = prix unitaire * poids
+                ligne.setMontantBrut(tarif.getPrix() * kg);
+
+                commandeLigneRepository.save(ligne);
+                lignes.add(ligne);
+            }
         }
 
         commande.setLignes(lignes);
 
-        // Calcul montant net total
+        // --------------------------------------------------
+        // 🔥 CALCUL DU NET (avec remise répartie)
+        // --------------------------------------------------
         double totalBrut = lignes.stream().mapToDouble(CommandeLigne::getMontantBrut).sum();
         double remiseGlobale = commande.getRemise();
 
@@ -123,27 +177,21 @@ public class CommandeService {
 
         double totalNet = lignes.stream().mapToDouble(CommandeLigne::getMontantNet).sum();
 
-        // Paiement global
+        // --------------------------------------------------
+        // 🔥 PAIEMENT
+        // --------------------------------------------------
         double montantPaye = dto.getMontantPaye() != null ? dto.getMontantPaye() : 0;
         commande.setMontantPaye(montantPaye);
 
-        // 🔥 Détermination automatique du statut de paiement
-        if (montantPaye == 0) {
-            commande.setStatutPaiement(StatutPaiement.NON_PAYE);
-        } else if (montantPaye < totalNet) {
-            commande.setStatutPaiement(StatutPaiement.PARTIELLEMENT_PAYE);
-        } else {
-            commande.setStatutPaiement(StatutPaiement.PAYE);
-        }
+        if (montantPaye == 0) commande.setStatutPaiement(StatutPaiement.NON_PAYE);
+        else if (montantPaye < totalNet) commande.setStatutPaiement(StatutPaiement.PARTIELLEMENT_PAYE);
+        else commande.setStatutPaiement(StatutPaiement.PAYE);
 
-        // Sauvegarde finale
         return commandeRepository.save(commande);
     }
 
-
-
     // Sauvegarde + génération PDF
-    public ResponseEntity<byte[]> saveCommandeEtTelechargerPdf(CommandeDTO dto) {
+    public ResponseEntity<byte[]> saveCommandeEtTelechargerPdf(DtoCommande dto) {
         Commande saved = saveCommandeEntity(dto);
         Utilisateur user = getUserConnecte();
 
@@ -158,8 +206,8 @@ public class CommandeService {
 
 
     // Conversion entity -> DTO
-    public CommandeDTO toDto(Commande c) {
-        CommandeDTO dto = new CommandeDTO();
+    public DtoCommande toDto(Commande c) {
+        DtoCommande dto = new DtoCommande();
 
         dto.setId(c.getId());
         dto.setClientId(c.getClient() != null ? c.getClient().getId() : null);
@@ -191,14 +239,13 @@ public class CommandeService {
         }
 
         dto.setParametreIds(paramIds);
-        dto.setQtes(qtes);
         dto.setMontantsBruts(brut);
         dto.setMontantsNets(net);
 
         return dto;
     }
 
-        public List<CommandeDTO> getAllCommandes() {
+        public List<DtoCommande> getAllCommandes() {
         Utilisateur user = getUserConnecte();
         return commandeRepository.findAllByPressing(user.getPressing())
                 .stream().map(this::toDto).toList();
@@ -254,7 +301,7 @@ public class CommandeService {
     // ------------------------------------------------------
     // Récupérer une commande par id (avec vérif pressing)
     // ------------------------------------------------------
-    public CommandeDTO getCommandeById(Long id) {
+    public DtoCommande getCommandeById(Long id) {
         Utilisateur user = getUserConnecte();
 
         Commande commande = commandeRepository
