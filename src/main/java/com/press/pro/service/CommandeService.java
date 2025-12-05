@@ -60,10 +60,9 @@ public class CommandeService {
                 .orElseThrow(() -> new RuntimeException("Utilisateur introuvable : " + email));
     }
 
-    // Sauvegarde d'une commande
+
+    // SAUVEGARDE D’UNE COMMANDE (ARTICLE OU KILO)
     // ------------------------------------------------------
-// SAUVEGARDE D’UNE COMMANDE (ARTICLE OU KILO)
-// ------------------------------------------------------
     @Transactional
     public Commande saveCommandeEntity(DtoCommande dto) {
 
@@ -218,34 +217,60 @@ public class CommandeService {
         dto.setDateReception(c.getDateReception());
         dto.setDateLivraison(c.getDateLivraison());
 
-        // 🔹 Statut de la commande
         dto.setStatut(c.getStatut());
+        dto.setStatutPaiement(
+                c.getStatutPaiement() != null ? c.getStatutPaiement() : StatutPaiement.NON_PAYE
+        );
 
-        // 🔹 Statut du paiement (ajouté)
-        dto.setStatutPaiement(c.getStatutPaiement() != null ? c.getStatutPaiement() : StatutPaiement.NON_PAYE);
-
+        // -------- Collections DTO --------
         List<Long> paramIds = new ArrayList<>();
         List<Integer> qtes = new ArrayList<>();
+        List<Double> poidsList = new ArrayList<>();
+        List<Long> kiloIds = new ArrayList<>();
+
         List<Double> brut = new ArrayList<>();
         List<Double> net = new ArrayList<>();
 
+        // ---------------------------
+        //     LIGNES DE COMMANDE
+        // ---------------------------
         if (c.getLignes() != null) {
             for (CommandeLigne l : c.getLignes()) {
-                paramIds.add(l.getParametre().getId());
-                qtes.add(l.getQuantite());
+
+                // 🔥 CAS ARTICLE
+                if (l.getParametre() != null) {
+                    paramIds.add(l.getParametre().getId());
+                    qtes.add(l.getQuantite());
+                    kiloIds.add(null);
+                    poidsList.add(null);
+                }
+
+                // 🔥 CAS KILO
+                else if (l.getTarifKilo() != null) {
+                    kiloIds.add(l.getTarifKilo().getId());
+                    poidsList.add(l.getPoids());
+                    paramIds.add(null);
+                    qtes.add(null);
+                }
+
                 brut.add(l.getMontantBrut());
                 net.add(l.getMontantNet());
             }
         }
 
         dto.setParametreIds(paramIds);
+        dto.setQuantites(qtes);
+
+        dto.setTarifKiloIds(kiloIds);
+        dto.setPoids(poidsList);
+
         dto.setMontantsBruts(brut);
         dto.setMontantsNets(net);
 
         return dto;
     }
 
-        public List<DtoCommande> getAllCommandes() {
+    public List<DtoCommande> getAllCommandes() {
         Utilisateur user = getUserConnecte();
         return commandeRepository.findAllByPressing(user.getPressing())
                 .stream().map(this::toDto).toList();
@@ -297,6 +322,20 @@ public class CommandeService {
                 .body(pdf);
     }
 
+    // ------------------------------------------------------
+    // DELETE une commande par id (avec vérif pressing)
+    // ------------------------------------------------------
+    @Transactional
+    public void deleteCommandeById(Long commandeId) {
+        Utilisateur user = getUserConnecte();
+
+        Commande commande = commandeRepository
+                .findDistinctByIdAndPressingId(commandeId, user.getPressing().getId())
+                .orElseThrow(() -> new RuntimeException("Commande introuvable ou non autorisée : " + commandeId));
+
+        commandeRepository.delete(commande);
+    }
+
 
     // ------------------------------------------------------
     // Récupérer une commande par id (avec vérif pressing)
@@ -338,37 +377,46 @@ public class CommandeService {
         );
     }
 
+
     public Map<String, Object> getCommandesEnCoursParJour() {
         Long pressingId = getUserConnecte().getPressing().getId();
-        LocalDate today = LocalDate.now();
 
-        List<Object[]> results = commandeRepository.countCommandesByStatutAndPressingAndDate(
-                StatutCommande.EN_COURS, pressingId, today
+        List<Object[]> results = commandeRepository.countCommandesEnCoursAujourdHui(
+                pressingId,
+                StatutCommande.EN_COURS
         );
+
         long nbCommandes = getNbCommandes(results);
 
         return Map.of(
-                "dateReception", today,
+                "date", LocalDate.now(),
                 "nbCommandes", nbCommandes
         );
     }
+
+
+
 
     public Map<String, Object> getCommandesLivreesParJour() {
         Long pressingId = getUserConnecte().getPressing().getId();
         LocalDate today = LocalDate.now();
 
-        List<Object[]> results = commandeRepository.countCommandesByStatutAndPressingAndDate(
-                StatutCommande.LIVREE, pressingId, today
+        List<Object[]> results = commandeRepository.countLivrees(
+                StatutCommande.LIVREE,
+                pressingId,
+                today
         );
-        long nbCommandes = getNbCommandes(results);
+
+        long nb = getNbCommandes(results);
 
         return Map.of(
-                "dateReception", today,
-                "nbCommandes", nbCommandes
+                "dateLivraison", today,
+                "nbCommandes", nb
         );
     }
 
-   //  Chiffre d'affaires total
+
+    //  Chiffre d'affaires total
     public BigDecimal getChiffreAffairesTotal() {
         Utilisateur user = getUserConnecte();
         Long pressingId = user.getPressing().getId();

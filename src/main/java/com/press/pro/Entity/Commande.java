@@ -4,8 +4,10 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.press.pro.enums.StatutCommande;
 import com.press.pro.enums.StatutPaiement;
 import jakarta.persistence.*;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -35,6 +37,10 @@ public class Commande {
 
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate dateLivraison;
+
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
+
 
     @Enumerated(EnumType.STRING)
     private StatutPaiement statutPaiement = StatutPaiement.NON_PAYE;

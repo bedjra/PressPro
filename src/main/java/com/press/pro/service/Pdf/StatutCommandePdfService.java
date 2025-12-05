@@ -201,7 +201,9 @@ public class StatutCommandePdfService {
             pay.addCell(totalCell(String.format("%.0f F", montantActuel), fontNormal, true));
 
             double total = montantAvant + montantActuel;
-            double net = commande.getMontantNetTotal() - commande.getRemise();
+//            double net = commande.getMontantNetTotal() - commande.getRemise();
+            double net = commande.getMontantNetTotal();
+
             double reste = net - total;
 
             pay.addCell(totalCell("Total payé", fontBold, false, new BaseColor(230, 255, 230)));

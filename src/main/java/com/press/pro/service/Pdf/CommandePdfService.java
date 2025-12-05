@@ -17,10 +17,8 @@ public class CommandePdfService {
 
     private static final String PDF_BASE_FOLDER = "pdfCommandes/";
 
-    public byte[] genererCommandePdf(Commande commande, Utilisateur user)
-    {
+    public byte[] genererCommandePdf(Commande commande, Utilisateur user) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        // Largeur augmentée pour plus de clarté
         Rectangle receiptSize = new Rectangle(250, 600);
         Document document = new Document(receiptSize, 10, 10, 10, 10);
 
@@ -28,7 +26,6 @@ public class CommandePdfService {
             PdfWriter.getInstance(document, out);
             document.open();
 
-            // Polices améliorées avec tailles plus adaptées
             Font fontBold = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9);
             Font fontNormal = FontFactory.getFont(FontFactory.HELVETICA, 8);
             Font fontHeader = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12);
@@ -39,7 +36,7 @@ public class CommandePdfService {
             Client client = commande.getClient();
 
             // =======================
-            //        ENTETE AMÉLIORÉ
+            //        ENTETE
             // =======================
             PdfPTable header = new PdfPTable(2);
             header.setWidthPercentage(100);
@@ -47,7 +44,7 @@ public class CommandePdfService {
             header.getDefaultCell().setBorder(Rectangle.NO_BORDER);
             header.setSpacingAfter(8f);
 
-            // LOGO avec encadrement subtil
+            // LOGO
             PdfPCell logo = new PdfPCell();
             logo.setBorder(Rectangle.BOX);
             logo.setBorderWidth(0.5f);
@@ -72,7 +69,7 @@ public class CommandePdfService {
 
             header.addCell(logo);
 
-            // INFOS PRESSING avec meilleur espacement
+            // INFOS PRESSING
             PdfPCell info = new PdfPCell();
             info.setBorder(Rectangle.NO_BORDER);
             info.setPaddingLeft(8f);
@@ -107,7 +104,7 @@ public class CommandePdfService {
             addSeparatorLine(document, 1f);
 
             // =======================
-            //     N° DE REÇU STYLISÉ
+            //     N° DE REÇU
             // =======================
             Long numeroLocal = getNumeroLocal(commande);
             PdfPTable recuTable = new PdfPTable(1);
@@ -129,7 +126,7 @@ public class CommandePdfService {
             document.add(recuTable);
 
             // =======================
-            // CLIENT + DATES AMÉLIORÉS
+            // CLIENT + DATES
             // =======================
             PdfPTable clientDate = new PdfPTable(2);
             clientDate.setWidthPercentage(100);
@@ -138,7 +135,6 @@ public class CommandePdfService {
 
             DateTimeFormatter df = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-            // Colonne client
             PdfPCell leftCell = new PdfPCell();
             leftCell.setBorder(Rectangle.BOX);
             leftCell.setBorderWidth(0.5f);
@@ -161,7 +157,6 @@ public class CommandePdfService {
 
             clientDate.addCell(leftCell);
 
-            // Colonne dates
             PdfPCell rightCell = new PdfPCell();
             rightCell.setBorder(Rectangle.BOX);
             rightCell.setBorderWidth(0.5f);
@@ -185,14 +180,13 @@ public class CommandePdfService {
             document.add(clientDate);
 
             // =======================
-// LIGNES DE COMMANDE (ARTICLE OU KILO)
-// =======================
+            // LIGNES DE COMMANDE
+            // =======================
             PdfPTable lignesTable = new PdfPTable(4);
             lignesTable.setWidthPercentage(100);
             lignesTable.setWidths(new float[]{3.5f, 0.8f, 1.2f, 1.5f});
             lignesTable.setSpacingAfter(8f);
 
-// En-tête
             addStyledTableHeader(lignesTable, new String[]{"Article ", "Qté ", "P.U", "Montant"}, fontBold);
 
             int index = 0;
@@ -205,13 +199,11 @@ public class CommandePdfService {
                 double montantNet;
 
                 if (ligne.getParametre() != null) {
-                    // Mode article
                     Parametre param = ligne.getParametre();
                     nomItem = param.getArticle() + " (" + abregerService(param.getService()) + ")";
                     qteStr = String.valueOf(ligne.getQuantite());
                     pu = param.getPrix();
                 } else if (ligne.getTarifKilo() != null) {
-                    // Mode kilo
                     TarifKilo tarif = ligne.getTarifKilo();
                     nomItem = tarif.getTranchePoids() + " (" + abregerService(tarif.getService()) + ")";
                     qteStr = ligne.getPoids() != null ? String.format("%.2f", ligne.getPoids()) : "0";
@@ -222,7 +214,6 @@ public class CommandePdfService {
                     pu = 0;
                 }
 
-                // Montant net cohérent avec backend
                 montantNet = ligne.getMontantNet();
 
                 lignesTable.addCell(createStyledCell(nomItem, fontNormal, Element.ALIGN_LEFT, bgColor));
@@ -235,15 +226,21 @@ public class CommandePdfService {
 
             document.add(lignesTable);
 
-// =======================
-// TOTAUX
-// =======================
-            double montantTotalNet = commande.getLignes().stream()
-                    .mapToDouble(CommandeLigne::getMontantNet)
+            // =======================
+            // TOTAUX AVEC REMISE
+            // =======================
+            double montantTotalBrut = commande.getLignes().stream()
+                    .mapToDouble(l -> {
+                        double pu = l.getParametre() != null ? l.getParametre().getPrix() : (l.getTarifKilo() != null ? l.getTarifKilo().getPrix() : 0);
+                        double quantite = l.getQuantite() != null ? l.getQuantite() : (l.getPoids() != null ? l.getPoids() : 0);
+                        return pu * quantite;
+                    })
                     .sum();
 
+            double remise = commande.getRemise();
+            double montantApresRemise = montantTotalBrut - remise;
             double paye = commande.getMontantPaye();
-            double resteAPayer = montantTotalNet - paye;
+            double resteAPayer = montantApresRemise - paye;
 
             PdfPTable totaux = new PdfPTable(2);
             totaux.setWidthPercentage(100);
@@ -251,8 +248,16 @@ public class CommandePdfService {
             totaux.setSpacingBefore(5f);
             totaux.setSpacingAfter(8f);
 
-            totaux.addCell(createTotalCell("Montant Total Net", fontBold, false));
-            totaux.addCell(createTotalCell(String.format("%.0f F", montantTotalNet), fontBold, true));
+            totaux.addCell(createTotalCell("Montant Total", fontNormal, false));
+            totaux.addCell(createTotalCell(String.format("%.0f F", montantTotalBrut), fontNormal, true));
+
+            if (remise > 0) {
+                totaux.addCell(createTotalCell("Remise", fontNormal, false));
+                totaux.addCell(createTotalCell(String.format("%.0f F", remise), fontNormal, true));
+            }
+
+            totaux.addCell(createTotalCell("Net à Payer", fontBold, false, new BaseColor(230, 230, 230)));
+            totaux.addCell(createTotalCell(String.format("%.0f F", montantApresRemise), fontBold, true, new BaseColor(230, 230, 230)));
 
             if (paye > 0) {
                 totaux.addCell(createTotalCell("Montant Payé", fontNormal, false));
@@ -265,14 +270,10 @@ public class CommandePdfService {
 
             document.add(totaux);
 
-
             // =======================
             // MESSAGE DE FIN
             // =======================
-            Paragraph userInfo = new Paragraph(
-                    "Émis par : " + user.getEmail(),
-                    fontSmall
-            );
+            Paragraph userInfo = new Paragraph("Émis par : " + user.getEmail(), fontSmall);
             userInfo.setAlignment(Element.ALIGN_CENTER);
             userInfo.setSpacingBefore(5f);
             document.add(userInfo);
@@ -281,7 +282,6 @@ public class CommandePdfService {
             merci.setAlignment(Element.ALIGN_CENTER);
             merci.setSpacingBefore(8f);
             document.add(merci);
-
 
             document.close();
 
@@ -300,7 +300,7 @@ public class CommandePdfService {
     }
 
     // ==========================
-    //       UTILITAIRES AMÉLIORÉS
+    //       UTILITAIRES
     // ==========================
 
     private void addSeparatorLine(Document document, float width) throws DocumentException {
@@ -366,26 +366,5 @@ public class CommandePdfService {
 
     private String formatNumeroFacture(Long id) {
         return String.format("%09d", id == null ? 0L : id);
-    }
-
-    private PdfPCell createCellLeft(String text, Font font) {
-        PdfPCell c = new PdfPCell(new Phrase(text, font));
-        c.setHorizontalAlignment(Element.ALIGN_LEFT);
-        c.setBorder(Rectangle.NO_BORDER);
-        return c;
-    }
-
-    private PdfPCell createCellCenter(String text, Font font) {
-        PdfPCell c = new PdfPCell(new Phrase(text, font));
-        c.setHorizontalAlignment(Element.ALIGN_CENTER);
-        c.setBorder(Rectangle.NO_BORDER);
-        return c;
-    }
-
-    private PdfPCell createCellRight(String text, Font font) {
-        PdfPCell c = new PdfPCell(new Phrase(text, font));
-        c.setHorizontalAlignment(Element.ALIGN_RIGHT);
-        c.setBorder(Rectangle.NO_BORDER);
-        return c;
     }
 }

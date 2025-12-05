@@ -113,6 +113,31 @@ public class TarifKiloService {
         tarifKiloRepository.delete(tarif);
     }
 
+    // ----------------------------------------
+// ✅ Récupérer un tarif par son ID (sécurisé)
+// ----------------------------------------
+    public TarifKiloDto getById(Long id) {
+        Utilisateur user = getUserConnecte();
+        Long pressingId = user.getPressing().getId();
+
+        TarifKilo tarif = tarifKiloRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Tarif introuvable : " + id));
+
+        // Sécurité : vérifier que le tarif appartient au pressing du user
+        if (!tarif.getPressing().getId().equals(pressingId)) {
+            throw new RuntimeException("Accès refusé : ce tarif n’appartient pas à votre pressing !");
+        }
+
+        // Conversion -> DTO
+        TarifKiloDto dto = new TarifKiloDto();
+        dto.setId(tarif.getId());
+        dto.setTranchePoids(tarif.getTranchePoids());
+        dto.setService(tarif.getService());
+        dto.setPrix(tarif.getPrix());
+
+        return dto;
+    }
+
 
 
     public void importerTarifsParDefaut() {
@@ -122,9 +147,9 @@ public class TarifKiloService {
 
         // Liste des tranches avec les tarifs associés
         Object[][] DATA = {
-                {"1Kg-4Kg", 700, 1100, 1600, 2400},
-                {"5Kg-9Kg", 600, 1000, 1400, 2100},
-                {"10Kg-20Kg", 500, 800, 1200, 1900},
+                {"1-4Kg", 700, 1100, 1600, 2400},
+                {"5-9Kg", 600, 1000, 1400, 2100},
+                {"10-20Kg", 500, 800, 1200, 1900},
                 {"Sup à 20Kg", 450, 700, 1000, 1700}
         };
 

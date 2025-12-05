@@ -70,11 +70,11 @@ public class CommandeController {
         );
     }
 
-
-
-
-
-
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteCommande(@PathVariable("id") Long id) {
+        commandeService.deleteCommandeById(id);
+        return ResponseEntity.ok("Commande supprimée avec succès !");
+    }
 
 
 

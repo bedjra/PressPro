@@ -62,6 +62,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
+    
+
     private boolean isTokenExpired(String token) {
         try {
             var claims = io.jsonwebtoken.Jwts.parser()
