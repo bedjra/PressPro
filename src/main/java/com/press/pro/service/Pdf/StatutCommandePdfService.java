@@ -156,66 +156,63 @@ public class StatutCommandePdfService {
             document.add(clientDate);
 
             // =======================
-            //     LIGNES PRODUITS
-            // =======================
-//            PdfPTable lignes = new PdfPTable(4);
-//            lignes.setWidthPercentage(100);
-//            lignes.setWidths(new float[]{3.5f, 0.8f, 1.2f, 1.5f});
-//            addHeader(lignes, new String[]{"Article", "Qté", "P.U", "Montant"}, fontBold);
-//
-//            int index = 0;
-//            for (CommandeLigne lg : commande.getLignes()) {
-//
-//                Parametre p = lg.getParametre();
-//                String ab = p != null ? abregerService(p.getService()) : "-";
-//                String art = p != null ? p.getArticle() : "-";
-//                String tf = art + " (" + ab + ")";
-//
-//                double pu = p != null ? p.getPrix() : 0;
-//                double mt = lg.getQuantite() * pu;
-//
-//                BaseColor bg = (index % 2 == 0) ? BaseColor.WHITE : new BaseColor(248, 248, 248);
-//
-//                lignes.addCell(styled(tf, fontNormal, Element.ALIGN_LEFT, bg));
-//                lignes.addCell(styled(String.valueOf(lg.getQuantite()), fontNormal, Element.ALIGN_CENTER, bg));
-//                lignes.addCell(styled(String.format("%.0f F", pu), fontNormal, Element.ALIGN_RIGHT, bg));
-//                lignes.addCell(styled(String.format("%.0f F", mt), fontBold, Element.ALIGN_RIGHT, bg));
-//
-//                index++;
-//            }
-//
-//            document.add(lignes);
-//            addSeparator(document);
-
-            // =======================
-            //       PAIEMENTS
-            // =======================
+//       PAIEMENTS
+// =======================
             PdfPTable pay = new PdfPTable(2);
             pay.setWidthPercentage(100);
             pay.setSpacingAfter(10f);
 
+            // Montant brut (AVANT REMISE)
+            double montantBrut = commande.getLignes()
+                    .stream()
+                    .mapToDouble(CommandeLigne::getMontantBrut)
+                    .sum();
+
+            pay.addCell(totalCell("Montant brut", fontNormal, false));
+            pay.addCell(totalCell(String.format("%.0f F", montantBrut), fontNormal, true));
+
+
+// Remise (AFFICHAGE UNIQUEMENT)
+            double remise = commande.getRemise();
+            if (remise > 0) {
+                pay.addCell(totalCell("Remise", fontNormal, false));
+                pay.addCell(totalCell(String.format("%.0f F", remise), fontNormal, true));
+            }
+
+// Montants déjà payés
             pay.addCell(totalCell("Montant payé avant", fontNormal, false));
             pay.addCell(totalCell(String.format("%.0f F", montantAvant), fontNormal, true));
 
             pay.addCell(totalCell("Montant payé maintenant", fontNormal, false));
             pay.addCell(totalCell(String.format("%.0f F", montantActuel), fontNormal, true));
 
-            double total = montantAvant + montantActuel;
-//            double net = commande.getMontantNetTotal() - commande.getRemise();
-            double net = commande.getMontantNetTotal();
 
-            double reste = net - total;
 
+// Calculs (NET DÉJÀ CALCULÉ CÔTÉ MÉTIER)
+            double totalPaye = montantAvant + montantActuel;
+            double netAPayer = commande.getMontantNetTotal(); // ⚠️ déjà après remise
+            double reste = netAPayer - totalPaye;
+
+// Sécurité : jamais négatif
+            if (reste < 0) reste = 0;
+
+// Total payé
             pay.addCell(totalCell("Total payé", fontBold, false, new BaseColor(230, 255, 230)));
-            pay.addCell(totalCell(String.format("%.0f F", total), fontBold, true, new BaseColor(230, 255, 230)));
+            pay.addCell(totalCell(String.format("%.0f F", totalPaye), fontBold, true, new BaseColor(230, 255, 230)));
 
-            BaseColor resteBg = reste > 0 ? new BaseColor(255, 245, 230) : new BaseColor(230, 255, 230);
+// Reste à payer
+            BaseColor resteBg = reste > 0
+                    ? new BaseColor(255, 245, 230)
+                    : new BaseColor(230, 255, 230);
+
             pay.addCell(totalCell("Reste à payer", fontBold, false, resteBg));
             pay.addCell(totalCell(String.format("%.0f F", reste), fontBold, true, resteBg));
 
             document.add(pay);
-
             addSeparator(document);
+
+
+
 
             // =======================
             // Message final

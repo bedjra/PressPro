@@ -83,8 +83,24 @@ public interface CommandeRepository extends JpaRepository<Commande, Long> {
 
 
     // 🔹 CA total pour un pressing
-    @Query("SELECT SUM(c.montantPaye) FROM Commande c WHERE c.pressing.id = :pressingId")
-    BigDecimal sumMontantNetByPressing(@Param("pressingId") Long pressingId);
+
+    @Query("""
+SELECT COALESCE(
+    SUM(
+        (SELECT SUM(l.montantBrut)
+         FROM CommandeLigne l
+         WHERE l.commande = c
+        ) - c.remise
+    ), 0)
+FROM Commande c
+WHERE c.pressing.id = :pressingId
+AND c.statut = 'LIVREE'
+""")
+    BigDecimal sumChiffreAffairesTotal(@Param("pressingId") Long pressingId);
+
+//
+//    @Query("SELECT SUM(c.montantPaye) FROM Commande c WHERE c.pressing.id = :pressingId")
+//    BigDecimal sumMontantNetByPressing(@Param("pressingId") Long pressingId);
 
     // 🔹 CA pour un pressing à une date donnée
     @Query("SELECT SUM(c.montantPaye) FROM Commande c " +
@@ -101,14 +117,17 @@ public interface CommandeRepository extends JpaRepository<Commande, Long> {
                                                           @Param("pressingId") Long pressingId);
 
 
-    @Query("SELECT SUM(l.montantBrut) - SUM(c.remise) - SUM(c.montantPaye) " +
-            "FROM Commande c JOIN c.lignes l " +
-            "WHERE c.pressing.id = :pressingId " +
-            "AND c.statutPaiement IN :statuts")
-    Optional<Double> sumResteAPayerByPressingAndStatutPaiement(
-            @Param("pressingId") Long pressingId,
-            @Param("statuts") List<StatutPaiement> statuts
-    );
+
+
+
+
+
+
+
+    @Query("SELECT COALESCE(SUM(c.resteAPayer), 0.0) FROM Commande c WHERE c.pressing.id = :pressingId")
+    Double sumResteAPayerByPressing(@Param("pressingId") Long pressingId);
+
+
 
 }
 

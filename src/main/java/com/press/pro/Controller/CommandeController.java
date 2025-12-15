@@ -110,10 +110,7 @@ public class CommandeController {
         return commandeService.getCAMensuel();
     }
 
-    @GetMapping("/annuel")
-    public Double getCAAnnuel() {
-        return commandeService.getCAAnnuel();
-    }
+
 
     @GetMapping("/impayes")
     public Double getTotalImpayes() {

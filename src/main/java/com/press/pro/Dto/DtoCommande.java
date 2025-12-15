@@ -55,6 +55,20 @@ public class DtoCommande {
     private List<Double> montantsNets;
 
 
+    // -------------------------------
+// Reste à payer
+// -------------------------------
+    private Double resteAPayer;
+
+    public Double getResteAPayer() {
+        return resteAPayer;
+    }
+
+    public void setResteAPayer(Double resteAPayer) {
+        this.resteAPayer = resteAPayer;
+    }
+
+
     public Long getId() {
         return id;
     }

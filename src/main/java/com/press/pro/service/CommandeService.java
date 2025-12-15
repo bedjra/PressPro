@@ -204,6 +204,8 @@ public class CommandeService {
 
 
 
+
+
     // Conversion entity -> DTO
     public DtoCommande toDto(Commande c) {
         DtoCommande dto = new DtoCommande();
@@ -214,6 +216,7 @@ public class CommandeService {
 
         dto.setRemiseGlobale(c.getRemise());
         dto.setMontantPaye(c.getMontantPaye());
+        dto.setResteAPayer(c.getResteAPayer()); // <-- utilise la valeur de l'entité
         dto.setDateReception(c.getDateReception());
         dto.setDateLivraison(c.getDateLivraison());
 
@@ -231,22 +234,14 @@ public class CommandeService {
         List<Double> brut = new ArrayList<>();
         List<Double> net = new ArrayList<>();
 
-        // ---------------------------
-        //     LIGNES DE COMMANDE
-        // ---------------------------
         if (c.getLignes() != null) {
             for (CommandeLigne l : c.getLignes()) {
-
-                // 🔥 CAS ARTICLE
                 if (l.getParametre() != null) {
                     paramIds.add(l.getParametre().getId());
                     qtes.add(l.getQuantite());
                     kiloIds.add(null);
                     poidsList.add(null);
-                }
-
-                // 🔥 CAS KILO
-                else if (l.getTarifKilo() != null) {
+                } else if (l.getTarifKilo() != null) {
                     kiloIds.add(l.getTarifKilo().getId());
                     poidsList.add(l.getPoids());
                     paramIds.add(null);
@@ -269,6 +264,8 @@ public class CommandeService {
 
         return dto;
     }
+
+
 
     public List<DtoCommande> getAllCommandes() {
         Utilisateur user = getUserConnecte();
@@ -418,11 +415,10 @@ public class CommandeService {
 
     //  Chiffre d'affaires total
     public BigDecimal getChiffreAffairesTotal() {
-        Utilisateur user = getUserConnecte();
-        Long pressingId = user.getPressing().getId();
-
-        return commandeRepository.sumMontantNetByPressing(pressingId);
+        Long pressingId = getUserConnecte().getPressing().getId();
+        return commandeRepository.sumChiffreAffairesTotal(pressingId);
     }
+
 
     // 🔹 Chiffre d'affaires journalier
     public Double getCAJournalier() {
@@ -473,14 +469,11 @@ public class CommandeService {
     // 🔹 Total impayés
     public Double getTotalImpayes() {
         Long pressingId = getUserConnecte().getPressing().getId();
-
-        return commandeRepository
-                .sumResteAPayerByPressingAndStatutPaiement(
-                        pressingId,
-                        List.of(StatutPaiement.NON_PAYE, StatutPaiement.PARTIELLEMENT_PAYE)
-                )
-                .orElse(0.0);
+        return commandeRepository.sumResteAPayerByPressing(pressingId);
     }
+
+
+
 
 
 }

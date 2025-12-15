@@ -55,10 +55,7 @@ public class Commande {
     // -----------------------------
     // LOGIQUE PAIEMENT
     // -----------------------------
-    public void setMontantPaye(double montantPaye) {
-        this.montantPaye = montantPaye;
-        updateStatutPaiement();
-    }
+
 
     private void updateStatutPaiement() {
         double totalNet = getMontantNetTotal();
@@ -117,4 +114,18 @@ public class Commande {
 
     public double getRemise() { return remise; }
     public void setRemise(double remise) { this.remise = remise; }
+
+    @Column(nullable = false)
+    private double resteAPayer;
+
+    public void setMontantPaye(double montantPaye) {
+        this.montantPaye = montantPaye;
+        updateStatutPaiement();
+        updateResteAPayer();
+    }
+
+    private void updateResteAPayer() {
+        this.resteAPayer = getMontantNetTotal() - this.montantPaye;
+    }
+
 }
