@@ -25,7 +25,6 @@ public class Commande {
     @JoinColumn(name = "pressing_id", nullable = false)
     private Pressing pressing;
 
-    // Lignes de commande
     @OneToMany(mappedBy = "commande", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CommandeLigne> lignes;
 
@@ -41,7 +40,6 @@ public class Commande {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
-
     @Enumerated(EnumType.STRING)
     private StatutPaiement statutPaiement = StatutPaiement.NON_PAYE;
 
@@ -51,11 +49,12 @@ public class Commande {
     @Column(nullable = false)
     private double remise;
 
+    @Column(nullable = false)
+    private double resteAPayer;  // ✅ Stocké en base
 
     // -----------------------------
     // LOGIQUE PAIEMENT
     // -----------------------------
-
 
     private void updateStatutPaiement() {
         double totalNet = getMontantNetTotal();
@@ -75,12 +74,11 @@ public class Commande {
         double total = lignes.stream()
                 .mapToDouble(CommandeLigne::getMontantBrut)
                 .sum();
-        return total - remise; // appliquer la remise globale
+        return total - remise;
     }
 
-    @Transient
-    public double getResteAPayer() {
-        return getMontantNetTotal() - this.montantPaye;
+    private void updateResteAPayer() {
+        this.resteAPayer = getMontantNetTotal() - this.montantPaye;
     }
 
     // -----------------------------
@@ -112,20 +110,25 @@ public class Commande {
 
     public double getMontantPaye() { return montantPaye; }
 
-    public double getRemise() { return remise; }
-    public void setRemise(double remise) { this.remise = remise; }
-
-    @Column(nullable = false)
-    private double resteAPayer;
-
     public void setMontantPaye(double montantPaye) {
         this.montantPaye = montantPaye;
         updateStatutPaiement();
-        updateResteAPayer();
+        updateResteAPayer();  // ✅ Met à jour le champ en base
     }
 
-    private void updateResteAPayer() {
-        this.resteAPayer = getMontantNetTotal() - this.montantPaye;
+    public double getRemise() { return remise; }
+    public void setRemise(double remise) {
+        this.remise = remise;
+        updateResteAPayer();  // ✅ Met à jour quand la remise change
     }
 
+    // ✅ GETTER pour le champ resteAPayer stocké en base
+    public double getResteAPayer() {
+        return resteAPayer;
+    }
+
+    // ✅ SETTER pour le champ resteAPayer (si besoin)
+    public void setResteAPayer(double resteAPayer) {
+        this.resteAPayer = resteAPayer;
+    }
 }
