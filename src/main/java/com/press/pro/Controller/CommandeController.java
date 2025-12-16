@@ -76,6 +76,12 @@ public class CommandeController {
         return ResponseEntity.ok("Commande supprimée avec succès !");
     }
 
+    @GetMapping("/annuel")
+    public ResponseEntity<Double> getCAAnnuel() {
+        Double caAnnuel = commandeService.getCAAnnuel();
+        return ResponseEntity.ok(caAnnuel);
+    }
+
 
 
 

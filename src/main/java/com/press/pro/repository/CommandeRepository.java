@@ -1,10 +1,8 @@
 package com.press.pro.repository;
 
 
-import com.press.pro.Entity.Client;
 import com.press.pro.Entity.Pressing;
 import com.press.pro.enums.StatutCommande;
-import com.press.pro.enums.StatutPaiement;
 import org.springframework.data.jpa.repository.JpaRepository;
 import com.press.pro.Entity.Commande;
 import org.springframework.data.jpa.repository.Query;
@@ -13,22 +11,8 @@ import org.springframework.data.repository.query.Param;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import com.press.pro.Entity.Client;
-import com.press.pro.Entity.Pressing;
-import com.press.pro.enums.StatutCommande;
-import com.press.pro.enums.StatutPaiement;
-import org.springframework.data.jpa.repository.JpaRepository;
-import com.press.pro.Entity.Commande;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 public interface CommandeRepository extends JpaRepository<Commande, Long> {
 
@@ -83,24 +67,16 @@ public interface CommandeRepository extends JpaRepository<Commande, Long> {
 
 
     // 🔹 CA total pour un pressing
-
     @Query("""
-SELECT COALESCE(
-    SUM(
-        (SELECT SUM(l.montantBrut)
-         FROM CommandeLigne l
-         WHERE l.commande = c
-        ) - c.remise
-    ), 0)
-FROM Commande c
-WHERE c.pressing.id = :pressingId
-AND c.statut = 'LIVREE'
+    SELECT COALESCE(SUM(c.montantPaye), 0)
+    FROM Commande c
+    WHERE c.pressing.id = :pressingId
+    AND c.montantPaye > 0
 """)
     BigDecimal sumChiffreAffairesTotal(@Param("pressingId") Long pressingId);
 
-//
-//    @Query("SELECT SUM(c.montantPaye) FROM Commande c WHERE c.pressing.id = :pressingId")
-//    BigDecimal sumMontantNetByPressing(@Param("pressingId") Long pressingId);
+
+
 
     // 🔹 CA pour un pressing à une date donnée
     @Query("SELECT SUM(c.montantPaye) FROM Commande c " +
