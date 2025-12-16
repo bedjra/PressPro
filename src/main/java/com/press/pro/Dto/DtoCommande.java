@@ -7,7 +7,7 @@ import lombok.Data;
 import java.time.LocalDate;
 import java.util.List;
 
-@Data   // ✅ getters / setters / toString / equals / hashCode
+@Data
 public class DtoCommande {
 
     private Long id;
