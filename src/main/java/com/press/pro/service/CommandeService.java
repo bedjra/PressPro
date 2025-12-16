@@ -186,8 +186,12 @@ public class CommandeService {
         else if (montantPaye < totalNet) commande.setStatutPaiement(StatutPaiement.PARTIELLEMENT_PAYE);
         else commande.setStatutPaiement(StatutPaiement.PAYE);
 
+        // 🔥 Mise à jour des soldes (resteAPayer + reliquat)
+        commande.updateSoldes();
+
         return commandeRepository.save(commande);
     }
+
 
     // Sauvegarde + génération PDF
     public ResponseEntity<byte[]> saveCommandeEtTelechargerPdf(DtoCommande dto) {
@@ -216,7 +220,8 @@ public class CommandeService {
 
         dto.setRemiseGlobale(c.getRemise());
         dto.setMontantPaye(c.getMontantPaye());
-        dto.setResteAPayer(c.getResteAPayer()); // <-- utilise la valeur de l'entité
+        dto.setResteAPayer(c.getResteAPayer());
+        dto.setReliquat(c.getReliquat());  // <-- Ajout du reliquat dans le DTO
         dto.setDateReception(c.getDateReception());
         dto.setDateLivraison(c.getDateLivraison());
 
