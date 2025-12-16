@@ -25,7 +25,7 @@ public class CommandePdfService {
             PdfWriter.getInstance(document, out);
             document.open();
 
-            /* ===================== FONTS ===================== */
+            // ===================== FONTS =====================
             Font bold = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9);
             Font normal = FontFactory.getFont(FontFactory.HELVETICA, 8);
             Font header = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12);
@@ -35,18 +35,18 @@ public class CommandePdfService {
             Pressing pressing = commande.getPressing();
             Client client = commande.getClient();
 
-            /* ===================== ENTÊTE ===================== */
+            // ===================== ENTÊTE =====================
             PdfPTable entete = new PdfPTable(2);
             entete.setWidthPercentage(100);
             entete.setWidths(new float[]{1.2f, 3f});
             entete.getDefaultCell().setBorder(Rectangle.NO_BORDER);
 
+            // Logo
             PdfPCell logo = new PdfPCell();
             logo.setBorder(Rectangle.BOX);
             logo.setPadding(3);
-            logo.setFixedHeight(65f);
+            logo.setFixedHeight(60f);
             logo.setHorizontalAlignment(Element.ALIGN_CENTER);
-
             if (pressing.getLogo() != null && pressing.getLogo().length > 0) {
                 Image img = Image.getInstance(pressing.getLogo());
                 img.scaleToFit(55, 55);
@@ -56,6 +56,7 @@ public class CommandePdfService {
             }
             entete.addCell(logo);
 
+            // Infos pressing
             PdfPCell infos = new PdfPCell();
             infos.setBorder(Rectangle.NO_BORDER);
             infos.addElement(new Paragraph(pressing.getNom(), header));
@@ -63,12 +64,12 @@ public class CommandePdfService {
             String tel = "☎ " + pressing.getTelephone();
             if (pressing.getCel() != null && !pressing.getCel().isEmpty()) tel += " | " + pressing.getCel();
             infos.addElement(new Paragraph(tel, small));
-
             entete.addCell(infos);
             document.add(entete);
+
             addSeparator(document);
 
-            /* ===================== NUMÉRO ===================== */
+            // ===================== NUMÉRO =====================
             Paragraph numero = new Paragraph(
                     "BON DE COMMANDE N° " + formatNumeroFacture(getNumeroLocal(commande)),
                     title
@@ -77,26 +78,22 @@ public class CommandePdfService {
             numero.setSpacingAfter(5f);
             document.add(numero);
 
-            /* ===================== CLIENT / DATES ===================== */
+            // ===================== CLIENT / DATES =====================
             DateTimeFormatter df = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-
             PdfPTable infosClient = new PdfPTable(2);
             infosClient.setWidthPercentage(100);
 
             infosClient.addCell(cellBox("Client\n" + (client != null ? client.getNom() : "CLIENT DIVERS"), normal));
-
             infosClient.addCell(cellBox(
                     "Réception : " + (commande.getDateReception() != null ? commande.getDateReception().format(df) : "-") +
                             "\nLivraison : " + (commande.getDateLivraison() != null ? commande.getDateLivraison().format(df) : "-"),
                     small));
-
             document.add(infosClient);
 
-            /* ===================== LIGNES ===================== */
+            // ===================== LIGNES =====================
             PdfPTable lignes = new PdfPTable(4);
             lignes.setWidthPercentage(100);
             lignes.setWidths(new float[]{3.5f, 0.8f, 1.2f, 1.5f});
-
             addHeader(lignes, new String[]{"Article", "Qté", "P.U", "Montant"}, bold);
 
             for (CommandeLigne l : commande.getLignes()) {
@@ -115,7 +112,7 @@ public class CommandePdfService {
             }
             document.add(lignes);
 
-            /* ===================== TOTAUX ===================== */
+            // ===================== TOTAUX =====================
             double totalBrut = commande.getLignes().stream()
                     .mapToDouble(CommandeLigne::getMontantBrut)
                     .sum();
@@ -123,7 +120,6 @@ public class CommandePdfService {
             double netAPayer = totalBrut - remise;
             double paye = commande.getMontantPaye();
             double resteAPayer = Math.max(0, netAPayer - paye);
-
 
             PdfPTable totaux = new PdfPTable(2);
             totaux.setWidthPercentage(100);
@@ -134,10 +130,9 @@ public class CommandePdfService {
             if (paye > 0) addTotal(totaux, "Payé", paye, normal);
             BaseColor bg = resteAPayer > 0 ? new BaseColor(255, 245, 230) : new BaseColor(230, 255, 230);
             addTotal(totaux, "Reste à payer", resteAPayer, bold, bg);
-
             document.add(totaux);
 
-            /* ===================== FOOTER ===================== */
+            // ===================== FOOTER =====================
             Paragraph footer1 = new Paragraph("Émis par : " + user.getEmail(), small);
             footer1.setAlignment(Element.ALIGN_CENTER);
             document.add(footer1);
@@ -161,8 +156,7 @@ public class CommandePdfService {
         return out.toByteArray();
     }
 
-    /* ===================== UTILITAIRES ===================== */
-
+    // ===================== UTILITAIRES =====================
     private void addSeparator(Document doc) throws DocumentException {
         LineSeparator l = new LineSeparator();
         l.setLineColor(BaseColor.LIGHT_GRAY);
@@ -211,9 +205,7 @@ public class CommandePdfService {
     }
 
     private long getNumeroLocal(Commande c) {
-        return c.getPressing().getCommandes().stream()
-                .filter(x -> x.getId() <= c.getId())
-                .count();
+        return c.getPressing().getCommandes().stream().filter(x -> x.getId() <= c.getId()).count();
     }
 
     private String formatNumeroFacture(Long id) {
