@@ -267,7 +267,7 @@ public class CommandePdfService {
             totaux.addCell(createTotalCell("Reliquat", fontBold, false, new BaseColor(245, 245, 220)));
             totaux.addCell(createTotalCell(String.format("%.0f F", reliquat), fontBold, true, new BaseColor(245, 245, 220)));
 
-            
+
             BaseColor resteBg = resteAPayer > 0 ? new BaseColor(255, 245, 230) : new BaseColor(230, 255, 230);
             totaux.addCell(createTotalCell("Reste à Payer", fontBold, false, resteBg));
             totaux.addCell(createTotalCell(String.format("%.0f F", resteAPayer), fontBold, true, resteBg));

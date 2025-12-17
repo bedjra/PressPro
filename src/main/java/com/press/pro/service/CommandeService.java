@@ -179,15 +179,30 @@ public class CommandeService {
         // --------------------------------------------------
         // 🔥 PAIEMENT
         // --------------------------------------------------
+        // --------------------------------------------------
         double montantPaye = dto.getMontantPaye() != null ? dto.getMontantPaye() : 0;
         commande.setMontantPaye(montantPaye);
 
-        if (montantPaye == 0) commande.setStatutPaiement(StatutPaiement.NON_PAYE);
-        else if (montantPaye < totalNet) commande.setStatutPaiement(StatutPaiement.PARTIELLEMENT_PAYE);
-        else commande.setStatutPaiement(StatutPaiement.PAYE);
+        // 🔥 reliquat NON géré ici
+        commande.setReliquat(0);
 
-        // 🔥 Mise à jour des soldes (resteAPayer + reliquat)
-        commande.updateSoldes();
+        // 🔥 calcul simple du reste à payer
+        double resteAPayer = totalNet - montantPaye;
+
+        if (resteAPayer > 0) {
+            commande.setResteAPayer(resteAPayer);
+            commande.setStatutPaiement(
+                    montantPaye == 0
+                            ? StatutPaiement.NON_PAYE
+                            : StatutPaiement.PARTIELLEMENT_PAYE
+            );
+        } else {
+            commande.setResteAPayer(0);
+            commande.setStatutPaiement(StatutPaiement.PAYE);
+        }
+
+
+
 
         return commandeRepository.save(commande);
     }
@@ -284,30 +299,56 @@ public class CommandeService {
     // Changer le statut d'une commande et ajouter un paiement partiel
     // ------------------------------------------------------
     @Transactional
-    public ResponseEntity<byte[]> updateStatutCommandeAvecPaiementPdf(Long commandeId,
-                                                                      double montantActuel) {
+    public ResponseEntity<byte[]> updateStatutCommandeAvecPaiementPdf(
+            Long commandeId,
+            double montantActuel,
+            Double reliquat
+    ) {
 
         Utilisateur user = getUserConnecte();
 
-        // Vérification propriétaire pressing
         Commande commande = commandeRepository
                 .findDistinctByIdAndPressingId(commandeId, user.getPressing().getId())
                 .orElseThrow(() -> new RuntimeException("Commande introuvable : " + commandeId));
 
         double montantAvant = commande.getMontantPaye();
 
-        // 🔥 Mise à jour du statut : on force à LIVREE
+        // 🔹 Statut livré
         commande.setStatut(StatutCommande.LIVREE);
 
-        // 🔥 Ajout du paiement si présent
+        // 🔹 Paiement du jour
         if (montantActuel > 0) {
             commande.setMontantPaye(montantAvant + montantActuel);
+            commande.setMontantPayeAujourdHui(montantActuel);
+        } else {
+            commande.setMontantPayeAujourdHui(0.0);
         }
 
-        // 🔥 Sauvegarde
+        // 🔹 Reliquat OPTIONNEL
+        double reliquatEffectif = reliquat != null ? reliquat : 0;
+        commande.setReliquat(reliquatEffectif);
+
+        // 🔹 Recalcul explicite
+        double totalNet = commande.getMontantNetTotal();
+        double totalRegle = commande.getMontantPaye() + reliquatEffectif;
+        double reste = totalNet - totalRegle;
+
+        if (reste > 0) {
+            commande.setResteAPayer(reste);
+            commande.setStatutPaiement(
+                    totalRegle == 0
+                            ? StatutPaiement.NON_PAYE
+                            : StatutPaiement.PARTIELLEMENT_PAYE
+            );
+        } else {
+            commande.setResteAPayer(0);
+            commande.setStatutPaiement(StatutPaiement.PAYE);
+        }
+
+        // 🔹 Sauvegarde
         Commande saved = commandeRepository.save(commande);
 
-        // 🔥 Génération PDF : ancien montant, montant ajouté, nouvel état + utilisateur émetteur
+        // 🔹 PDF
         byte[] pdf = statutCommandePdfService.genererStatutPdf(
                 saved,
                 montantActuel,
@@ -315,14 +356,13 @@ public class CommandeService {
                 user
         );
 
-
-        // 🔥 Retour du fichier en téléchargement
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         "attachment; filename=commande_statut_" + saved.getId() + ".pdf")
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(pdf);
     }
+
 
     // ------------------------------------------------------
     // DELETE une commande par id (avec vérif pressing)
@@ -426,14 +466,22 @@ public class CommandeService {
 
 
     // 🔹 Chiffre d'affaires journalier
+
+
     public Double getCAJournalier() {
         Utilisateur user = getUserConnecte();
-        LocalDate today = LocalDate.now();
+        List<Commande> commandes = commandeRepository.findAllByPressingId(user.getPressing().getId());
 
-        return commandeRepository
-                .sumMontantNetByDateAndPressing(today, user.getPressing().getId())
-                .orElse(0.0);
+        double caDuJour = commandes.stream()
+                .mapToDouble(c -> c.getMontantPayeAujourdHui() != null ? c.getMontantPayeAujourdHui() : 0.0)
+                .sum();
+
+
+        return caDuJour;
     }
+
+
+
 
     // 🔹 Chiffre d'affaires hebdomadaire
     public Double getCAHebdomadaire() {

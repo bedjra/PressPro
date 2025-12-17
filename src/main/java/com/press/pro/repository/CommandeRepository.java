@@ -22,6 +22,10 @@ public interface CommandeRepository extends JpaRepository<Commande, Long> {
     Optional<Commande> findDistinctByIdAndPressingId(@Param("id") Long id, @Param("pressingId") Long pressingId);
 
 
+
+    // 🔹 Nouvelle méthode pour toutes les commandes d’un pressing
+    List<Commande> findAllByPressingId(Long pressingId);
+
     @Query("SELECT c.pressing.id, COUNT(c) " +
             "FROM Commande c " +
             "WHERE c.pressing.id = :pressingId " +

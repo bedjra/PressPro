@@ -60,24 +60,17 @@ public class Commande {
     @Column(nullable = false)
     private double resteAPayer;
 
+    /**
+     * 👉 RELIQUAT SAISI MANUELLEMENT (PAS AUTOMATIQUE)
+     */
     @Column(nullable = false)
     private double reliquat;
+
+    private Double montantPayeAujourdHui = 0.0;
 
     // -----------------------------
     // LOGIQUE METIER
     // -----------------------------
-
-    private void updateStatutPaiement() {
-        double totalNet = getMontantNetTotal();
-
-        if (montantPaye <= 0) {
-            statutPaiement = StatutPaiement.NON_PAYE;
-        } else if (montantPaye < totalNet) {
-            statutPaiement = StatutPaiement.PARTIELLEMENT_PAYE;
-        } else {
-            statutPaiement = StatutPaiement.PAYE;
-        }
-    }
 
     @Transient
     public double getMontantNetTotal() {
@@ -87,35 +80,39 @@ public class Commande {
                 .sum() - remise;
     }
 
-
-    // Méthode de calcul des soldes
-    public void updateSoldes() {
+    /**
+     * 👉 MÉTHODE EXPLICITE
+     * Appelée dans le SERVICE (pas automatiquement)
+     */
+    public void recalculerPaiement() {
         double totalNet = getMontantNetTotal();
-        double diff = totalNet - montantPaye;
+        double totalRegle = montantPaye + reliquat;
+        double diff = totalNet - totalRegle;
 
         if (diff > 0) {
             this.resteAPayer = diff;
-            this.reliquat = 0;
+            this.statutPaiement = totalRegle == 0
+                    ? StatutPaiement.NON_PAYE
+                    : StatutPaiement.PARTIELLEMENT_PAYE;
         } else {
             this.resteAPayer = 0;
-            this.reliquat = Math.abs(diff);
+            this.statutPaiement = StatutPaiement.PAYE;
         }
     }
 
-
     // -----------------------------
-    // SETTERS PERSONNALISÉS
+    // SETTERS SIMPLES (SANS LOGIQUE)
     // -----------------------------
 
     public void setMontantPaye(double montantPaye) {
         this.montantPaye = montantPaye;
-        updateStatutPaiement();
-        updateSoldes();
     }
 
     public void setRemise(double remise) {
         this.remise = remise;
-        updateStatutPaiement();
-        updateSoldes();
+    }
+
+    public void setReliquat(double reliquat) {
+        this.reliquat = reliquat;
     }
 }

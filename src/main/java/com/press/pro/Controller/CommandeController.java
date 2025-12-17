@@ -58,17 +58,30 @@ public class CommandeController {
 
 
     //   🔹 Changer le statut d'une commande
+//    @PostMapping("/{id}/statut")
+//    public ResponseEntity<byte[]> updateStatutCommande(
+//            @PathVariable Long id,
+//            @RequestBody StatutUpdateRequest request) {
+//
+//        // On ignore request.getNouveauStatut() et on force à LIVREE
+//        return commandeService.updateStatutCommandeAvecPaiementPdf(
+//                id,
+//                request.getMontantActuel() // uniquement le montant
+//        );
+//    }
+
     @PostMapping("/{id}/statut")
     public ResponseEntity<byte[]> updateStatutCommande(
             @PathVariable Long id,
             @RequestBody StatutUpdateRequest request) {
 
-        // On ignore request.getNouveauStatut() et on force à LIVREE
         return commandeService.updateStatutCommandeAvecPaiementPdf(
                 id,
-                request.getMontantActuel() // uniquement le montant
+                request.getMontantActuel() != null ? request.getMontantActuel() : 0,
+                request.getReliquat()   // peut être null → OK
         );
     }
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteCommande(@PathVariable("id") Long id) {
