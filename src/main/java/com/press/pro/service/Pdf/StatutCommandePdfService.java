@@ -155,14 +155,17 @@ public class StatutCommandePdfService {
 
             document.add(clientDate);
 
+
             // =======================
-//       PAIEMENTS
-// =======================
+            //       PAIEMENTS
+            // =======================
             PdfPTable pay = new PdfPTable(2);
             pay.setWidthPercentage(100);
             pay.setSpacingAfter(10f);
 
-            // Montant brut (AVANT REMISE)
+            // -----------------------
+            // Montant brut (AVANT remise)
+            // -----------------------
             double montantBrut = commande.getLignes()
                     .stream()
                     .mapToDouble(CommandeLigne::getMontantBrut)
@@ -171,36 +174,63 @@ public class StatutCommandePdfService {
             pay.addCell(totalCell("Montant brut", fontNormal, false));
             pay.addCell(totalCell(String.format("%.0f F", montantBrut), fontNormal, true));
 
-
-// Remise (AFFICHAGE UNIQUEMENT)
+            // -----------------------
+            // Remise (affichage)
+            // -----------------------
             double remise = commande.getRemise();
             if (remise > 0) {
                 pay.addCell(totalCell("Remise", fontNormal, false));
                 pay.addCell(totalCell(String.format("%.0f F", remise), fontNormal, true));
             }
 
-// Montants déjà payés
+            // -----------------------
+            // Paiements
+            // -----------------------
             pay.addCell(totalCell("Montant payé avant", fontNormal, false));
             pay.addCell(totalCell(String.format("%.0f F", montantAvant), fontNormal, true));
 
             pay.addCell(totalCell("Montant payé maintenant", fontNormal, false));
             pay.addCell(totalCell(String.format("%.0f F", montantActuel), fontNormal, true));
 
+            // -----------------------
+            // Reliquat (OPTIONNEL)
+            // -----------------------
+            double reliquat = commande.getReliquat(); // peut être 0
+            if (reliquat > 0) {
+                pay.addCell(totalCell("Reliquat laissé", fontBold, false, new BaseColor(240, 240, 255)));
+                pay.addCell(totalCell(String.format("%.0f F", reliquat), fontBold, true, new BaseColor(240, 240, 255)));
+            }
 
 
-// Calculs (NET DÉJÀ CALCULÉ CÔTÉ MÉTIER)
-            double totalPaye = montantAvant + montantActuel;
-            double netAPayer = commande.getMontantNetTotal(); // ⚠️ déjà après remise
+            // -----------------------
+            // Calculs finaux
+            // -----------------------
+            double netAPayer = commande.getMontantNetTotal(); // déjà après remise
+            double totalPaye = montantAvant + montantActuel + reliquat;
             double reste = netAPayer - totalPaye;
 
-// Sécurité : jamais négatif
+            // Sécurité : jamais négatif
             if (reste < 0) reste = 0;
 
-// Total payé
-            pay.addCell(totalCell("Total payé", fontBold, false, new BaseColor(230, 255, 230)));
-            pay.addCell(totalCell(String.format("%.0f F", totalPaye), fontBold, true, new BaseColor(230, 255, 230)));
+            // -----------------------
+            // Total payé
+            // -----------------------
+            pay.addCell(totalCell(
+                    "Total payé",
+                    fontBold,
+                    false,
+                    new BaseColor(230, 255, 230)
+            ));
+            pay.addCell(totalCell(
+                    String.format("%.0f F", totalPaye),
+                    fontBold,
+                    true,
+                    new BaseColor(230, 255, 230)
+            ));
 
-// Reste à payer
+            // -----------------------
+            // Reste à payer
+            // -----------------------
             BaseColor resteBg = reste > 0
                     ? new BaseColor(255, 245, 230)
                     : new BaseColor(230, 255, 230);
@@ -210,6 +240,7 @@ public class StatutCommandePdfService {
 
             document.add(pay);
             addSeparator(document);
+
 
 
 
@@ -247,6 +278,8 @@ public class StatutCommandePdfService {
     }
 
     /* ======= UTILITAIRES DESIGN ======= */
+
+
 
     private void addSeparator(Document doc) throws DocumentException {
         LineSeparator line = new LineSeparator();

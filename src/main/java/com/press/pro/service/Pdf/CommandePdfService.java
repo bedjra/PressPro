@@ -238,7 +238,7 @@ public class CommandePdfService {
             double paye = commande.getMontantPaye();
             double resteAPayer = montantApresRemise - paye;
 
-            double reliquat = commande.getReliquat(); // récupère le reliquat de l'entité
+//            double reliquat = commande.getReliquat(); // récupère le reliquat de l'entité
 
 
 
@@ -264,8 +264,8 @@ public class CommandePdfService {
                 totaux.addCell(createTotalCell(String.format("%.0f F", paye), fontNormal, true));
             }
 
-            totaux.addCell(createTotalCell("Reliquat", fontBold, false, new BaseColor(245, 245, 220)));
-            totaux.addCell(createTotalCell(String.format("%.0f F", reliquat), fontBold, true, new BaseColor(245, 245, 220)));
+//            totaux.addCell(createTotalCell("Reliquat", fontBold, false, new BaseColor(245, 245, 220)));
+//            totaux.addCell(createTotalCell(String.format("%.0f F", reliquat), fontBold, true, new BaseColor(245, 245, 220)));
 
 
             BaseColor resteBg = resteAPayer > 0 ? new BaseColor(255, 245, 230) : new BaseColor(230, 255, 230);
