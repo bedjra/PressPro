@@ -14,4 +14,11 @@ public interface TarifKiloRepository extends JpaRepository<TarifKilo, Long> {
     // Vérifier si un tarif existe déjà pour éviter doublons
     boolean existsByPressingIdAndTranchePoidsAndService(Long pressingId, String tranchePoids, String service);
 
+    boolean existsByPressingIdAndTranchePoidsAndServiceAndIdNot(
+            Long pressingId,
+            String tranchePoids,
+            String service,
+            Long id
+    );
+
 }

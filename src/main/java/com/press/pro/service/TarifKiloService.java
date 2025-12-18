@@ -190,4 +190,42 @@ public class TarifKiloService {
         }
     }
 
+
+    public TarifKiloDto modifierTarif(Long id, TarifKiloDto dto) {
+
+        Utilisateur user = getUserConnecte();
+        Pressing pressing = user.getPressing();
+
+        TarifKilo tarif = tarifKiloRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Tarif introuvable"));
+
+        // Sécurité : vérifier que le tarif appartient au pressing connecté
+        if (!tarif.getPressing().getId().equals(pressing.getId())) {
+            throw new RuntimeException("Accès refusé à ce tarif");
+        }
+
+        // Vérification doublon (sauf lui-même)
+        boolean exist = tarifKiloRepository
+                .existsByPressingIdAndTranchePoidsAndServiceAndIdNot(
+                        pressing.getId(),
+                        dto.getTranchePoids(),
+                        dto.getService(),
+                        id
+                );
+
+        if (exist) {
+            throw new RuntimeException("Un tarif pour cette tranche et ce service existe déjà !");
+        }
+
+        tarif.setTranchePoids(dto.getTranchePoids());
+        tarif.setService(dto.getService());
+        tarif.setPrix(dto.getPrix());
+
+        tarif = tarifKiloRepository.save(tarif);
+
+        dto.setId(tarif.getId());
+        return dto;
+    }
+
+
 }

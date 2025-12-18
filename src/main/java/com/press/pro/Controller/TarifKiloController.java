@@ -37,15 +37,14 @@ public class TarifKiloController {
         return ResponseEntity.noContent().build();
     }
 
-//    @PostMapping("/import")
-//    public ResponseEntity<String> importDefault(@RequestParam boolean oui) {
-//        if (oui) {
-//            tarifKiloService.importerTarifsParDefaut();
-//            return ResponseEntity.ok("Importation réussie !");
-//        } else {
-//            return ResponseEntity.ok("Importation annulée !");
-//        }
-//    }
+    @PutMapping("/{id}")
+    public ResponseEntity<TarifKiloDto> modifierTarif(
+            @PathVariable Long id,
+            @RequestBody TarifKiloDto dto) {
+
+        return ResponseEntity.ok(tarifKiloService.modifierTarif(id, dto));
+    }
+
 
     @PostMapping("/import")
     public ResponseEntity<String> importDefault(@RequestBody Map<String, String> body) {
