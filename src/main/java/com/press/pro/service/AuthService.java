@@ -6,7 +6,9 @@ import com.press.pro.Dto.RegisterRequest;
 import com.press.pro.Entity.Pressing;
 import com.press.pro.Entity.Utilisateur;
 import com.press.pro.enums.Role;
+import com.press.pro.repository.PressingRepository;
 import com.press.pro.repository.UtilisateurRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,6 +21,9 @@ public class AuthService {
 
     @Autowired
     private UtilisateurRepository utilisateurRepository;
+
+    @Autowired
+    private PressingRepository pressingRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -178,5 +183,17 @@ public class AuthService {
         }
 
         utilisateurRepository.delete(user);
+    }
+
+    @Transactional
+    public void deleteAdmin(Long adminId) {
+        Utilisateur admin = (Utilisateur)this.utilisateurRepository.findById(adminId).orElseThrow(() -> new RuntimeException("Admin non trouvé"));
+        Pressing pressing = admin.getPressing();
+        if (pressing != null) {
+            this.pressingRepository.delete(pressing);
+        } else {
+            this.utilisateurRepository.delete(admin);
+        }
+
     }
 }

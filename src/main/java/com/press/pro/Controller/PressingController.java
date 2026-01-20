@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @Tag(name = "Pressing")
 @RestController
 @RequestMapping("/api/pressing")
@@ -31,5 +33,26 @@ public class PressingController {
     }
 
 
+
+    @Operation(
+            summary = "Put un pressing "
+    )
+    @PutMapping
+    public ResponseEntity<PressingRequest> updatePressing(@RequestBody PressingRequest request) {
+        return ResponseEntity.ok(this.pressingService.updatePressing(request));
+    }
+
+    @Operation(
+            summary = "activer un pressing"
+    )
+    @PutMapping({"/toggle/{id}"})
+    public ResponseEntity<PressingRequest> togglePressing(@PathVariable Long id) {
+        return ResponseEntity.ok(this.pressingService.togglePressingStatus(id));
+    }
+
+    @GetMapping({"/all"})
+    public List<PressingRequest> getAllPressings() {
+        return this.pressingService.getAllPressings();
+    }
 
 }

@@ -1,7 +1,9 @@
 package com.press.pro.Entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,7 +11,9 @@ import java.util.List;
 @Entity
 public class Pressing {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(
+            strategy = GenerationType.IDENTITY
+    )
     private Long id;
     @Lob
     private byte[] logo;
@@ -18,38 +22,85 @@ public class Pressing {
     private String telephone;
     private String cel;
     private String adresse;
-
-    // ⚡ Ajout de fetch lazy pour éviter les doublons
-    @OneToOne(mappedBy = "pressing", fetch = FetchType.LAZY)
+    @CreationTimestamp
+    @Column(
+            updatable = false
+    )
+    private LocalDateTime dateCreation;
+    @Column(
+            nullable = false
+    )
+    private boolean actif = true;
+    @OneToOne(
+            mappedBy = "pressing",
+            fetch = FetchType.LAZY
+    )
     private Utilisateur admin;
-
-    @OneToMany(mappedBy = "pressing", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Commande> commandes = new ArrayList<>();
+    @OneToMany(
+            mappedBy = "pressing",
+            cascade = {CascadeType.ALL},
+            fetch = FetchType.LAZY
+    )
+    private List<Commande> commandes = new ArrayList();
+    @OneToMany(
+            mappedBy = "pressing",
+            cascade = {CascadeType.ALL},
+            fetch = FetchType.LAZY
+    )
+    private List<Utilisateur> utilisateurs = new ArrayList();
+    @OneToMany(
+            mappedBy = "pressing",
+            cascade = {CascadeType.ALL},
+            fetch = FetchType.LAZY
+    )
+    private List<Client> clients = new ArrayList();
+    @OneToMany(
+            mappedBy = "pressing",
+            cascade = {CascadeType.ALL},
+            fetch = FetchType.LAZY
+    )
+    private List<Charge> charges = new ArrayList();
+    @OneToMany(
+            mappedBy = "pressing",
+            cascade = {CascadeType.ALL},
+            fetch = FetchType.LAZY
+    )
+    private List<CommandeLigne> commandeLignes = new ArrayList();
+    @OneToMany(
+            mappedBy = "pressing",
+            cascade = {CascadeType.ALL},
+            fetch = FetchType.LAZY
+    )
+    private List<TarifKilo> tarifKilos = new ArrayList();
+    @OneToMany(
+            mappedBy = "pressing",
+            cascade = {CascadeType.ALL},
+            fetch = FetchType.LAZY
+    )
+    private List<Parametre> parametres = new ArrayList();
 
     public List<Commande> getCommandes() {
-        return commandes;
+        return this.commandes;
     }
 
     public void setCommandes(List<Commande> commandes) {
         this.commandes = commandes;
     }
 
-    public Pressing() {}
+    public Pressing() {
+    }
 
-    public Pressing(String nom, byte[]  logo, String email, String telephone,String cel, String adresse) {
+    public Pressing(String nom, byte[] logo, String email, String telephone, String cel, String adresse) {
         this.nom = nom;
         this.logo = logo;
         this.email = email;
         this.telephone = telephone;
-        this.cel =cel;
+        this.cel = cel;
         this.adresse = adresse;
     }
 
-    // Getters / Setters
-
-
     public String getCel() {
-        return cel;
+        return this.cel;
     }
 
     public void setCel(String cel) {
@@ -57,7 +108,7 @@ public class Pressing {
     }
 
     public Long getId() {
-        return id;
+        return this.id;
     }
 
     public void setId(Long id) {
@@ -65,15 +116,15 @@ public class Pressing {
     }
 
     public byte[] getLogo() {
-        return logo;
+        return this.logo;
     }
 
-    public void setLogo( byte[]   logo) {
+    public void setLogo(byte[] logo) {
         this.logo = logo;
     }
 
     public String getNom() {
-        return nom;
+        return this.nom;
     }
 
     public void setNom(String nom) {
@@ -81,7 +132,7 @@ public class Pressing {
     }
 
     public String getEmail() {
-        return email;
+        return this.email;
     }
 
     public void setEmail(String email) {
@@ -89,7 +140,7 @@ public class Pressing {
     }
 
     public String getTelephone() {
-        return telephone;
+        return this.telephone;
     }
 
     public void setTelephone(String telephone) {
@@ -97,7 +148,7 @@ public class Pressing {
     }
 
     public String getAdresse() {
-        return adresse;
+        return this.adresse;
     }
 
     public void setAdresse(String adresse) {
@@ -105,10 +156,22 @@ public class Pressing {
     }
 
     public Utilisateur getAdmin() {
-        return admin;
+        return this.admin;
     }
 
     public void setAdmin(Utilisateur admin) {
         this.admin = admin;
+    }
+
+    public boolean isActif() {
+        return this.actif;
+    }
+
+    public void setActif(boolean actif) {
+        this.actif = actif;
+    }
+
+    public LocalDateTime getDateCreation() {
+        return this.dateCreation;
     }
 }

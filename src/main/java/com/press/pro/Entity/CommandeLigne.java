@@ -13,6 +13,12 @@ public class CommandeLigne {
     @JoinColumn(name = "commande_id", nullable = false)
     private Commande commande;
 
+    @ManyToOne
+    @JoinColumn(
+            name = "pressing_id"
+    )
+    private Pressing pressing;
+
     // -----------------------------
     // 🔹 Mode ARTICLE
     // -----------------------------
@@ -87,4 +93,16 @@ public class CommandeLigne {
 
     public double getMontantNet() { return montantNet; }
     public void setMontantNet(double montantNet) { this.montantNet = montantNet; }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Pressing getPressing() {
+        return pressing;
+    }
+
+    public void setPressing(Pressing pressing) {
+        this.pressing = pressing;
+    }
 }

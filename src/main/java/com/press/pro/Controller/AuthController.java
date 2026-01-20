@@ -8,6 +8,7 @@ import com.press.pro.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -83,6 +84,18 @@ public class AuthController {
         Map<String, String> response = new HashMap<>();
         response.put("role", role);
         return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping({"/compte/{id}"})
+    public ResponseEntity<String> deleteAdmin(@PathVariable("id") Long adminId) {
+        try {
+            this.authService.deleteAdmin(adminId);
+            return ResponseEntity.ok("Admin et toutes les données liées ont été supprimées avec succès.");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception var4) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur lors de la suppression de l'admin.");
+        }
     }
 }
 
