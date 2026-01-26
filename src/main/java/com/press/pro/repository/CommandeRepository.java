@@ -3,6 +3,7 @@ package com.press.pro.repository;
 
 import com.press.pro.Entity.Pressing;
 import com.press.pro.enums.StatutCommande;
+import com.press.pro.enums.StatutPaiement;
 import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import com.press.pro.Entity.Commande;
@@ -72,14 +73,6 @@ public interface CommandeRepository extends JpaRepository<Commande, Long> {
 
 
 
-    // 🔹 CA total pour un pressing
-    @Query("""
-    SELECT COALESCE(SUM(c.montantPaye), 0)
-    FROM Commande c
-    WHERE c.pressing.id = :pressingId
-""")
-    BigDecimal sumChiffreAffairesTotal(@Param("pressingId") Long pressingId);
-
 
     // 🔹 CA pour un pressing à une date donnée
     @Query("SELECT SUM(c.montantPaye) FROM Commande c " +
@@ -97,15 +90,6 @@ public interface CommandeRepository extends JpaRepository<Commande, Long> {
 
 
 
-
-
-
-
-
-
-
-
-
     // Somme du reste à payer pour un pressing donné
     @Query("SELECT COALESCE(SUM(c.resteAPayer), 0.0) FROM Commande c WHERE c.pressing.id = :pressingId")
     Double sumResteAPayerByPressing(@Param("pressingId") Long pressingId);
@@ -116,18 +100,6 @@ public interface CommandeRepository extends JpaRepository<Commande, Long> {
     @Query("UPDATE Commande c SET c.montantPayeAujourdHui = 0")
     void resetMontantPayeAujourdHui();
 
-    // Somme du CA journalier pour un pressing
-    @Query("""
-        SELECT SUM(
-            CASE 
-                WHEN c.dateReception = :aujourdhui THEN c.montantPaye
-                ELSE c.montantPayeAujourdHui
-            END
-        ) 
-        FROM Commande c
-        WHERE c.pressing.id = :pressingId
-    """)
-    Optional<Double> sumCAJournalier(@Param("pressingId") Long pressingId, @Param("aujourdhui") LocalDate aujourdhui);
 
     // Réinitialiser le montant payé dans la semaine pour toutes les commandes
     @Modifying
@@ -147,4 +119,33 @@ public interface CommandeRepository extends JpaRepository<Commande, Long> {
             @Param("debutSemaine") LocalDate debutSemaine,
             @Param("finSemaine") LocalDate finSemaine
     );
+
+    // 🔹 CA journalier fiable pour un pressing
+    @Query("SELECT COALESCE(SUM(c.montantPaye), 0) FROM Commande c " +
+            "WHERE c.pressing.id = :pressingId AND DATE(c.updatedAt) = CURRENT_DATE")
+    BigDecimal sumCAJournalier(@Param("pressingId") Long pressingId);
+
+
+
+
+
+    // 🔹 CA total pour un pressing
+    @Query("""
+        SELECT COALESCE(SUM(c.montantPaye), 0)
+        FROM Commande c
+        WHERE c.pressing.id = :pressingId
+          AND c.statutPaiement = 'PAYE'
+    """)
+    Long getChiffreAffaires(@Param("pressingId") Long pressingId);
+
+
+
+    // 🔹 Méthode pour récupérer toutes les commandes d'un pressing avec statut PAYE
+    List<Commande> findAllByPressingIdAndStatutPaiement(Long pressingId, StatutPaiement paye);
+
+    // 🔹 Méthode pour récupérer directement le chiffre d'affaires total (somme)
+    @Query("SELECT SUM(c.montantPaye) FROM Commande c WHERE c.pressing.id = :pressingId AND c.statutPaiement = :statut")
+    Long getChiffreAffaires(@Param("pressingId") Long pressingId, @Param("statut") StatutPaiement statut);
+
+
 }

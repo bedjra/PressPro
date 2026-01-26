@@ -19,17 +19,17 @@ public interface ChargeRepository extends JpaRepository<Charge, Long> {
 
 
     // ✅ Total des charges entre deux dates (hebdo, mensuel, annuel, etc.)
-    @Query("""
-        SELECT COALESCE(SUM(c.montant), 0)
-        FROM Charge c
-        WHERE c.dateCharge BETWEEN :start AND :end
-          AND c.pressing.id = :pressingId
-    """)
-    Double sumChargesBetweenDatesAndPressing(
-            @Param("start") LocalDate start,
-            @Param("end") LocalDate end,
-            @Param("pressingId") Long pressingId
-    );
+//    @Query("""
+//        SELECT COALESCE(SUM(c.montant), 0)
+//        FROM Charge c
+//        WHERE c.dateCharge BETWEEN :start AND :end
+//          AND c.pressing.id = :pressingId
+//    """)
+//    Double sumChargesBetweenDatesAndPressing(
+//            @Param("start") LocalDate start,
+//            @Param("end") LocalDate end,
+//            @Param("pressingId") Long pressingId
+//    );
 
     // ✅ Total des charges d’une journée
     @Query("""
@@ -47,4 +47,30 @@ public interface ChargeRepository extends JpaRepository<Charge, Long> {
     BigDecimal sumByPressingId(@Param("pressingId") Long pressingId);
 
 
+
+    // 🔹 Charges d’un mois précis POUR UN PRESSING
+    @Query("""
+    SELECT COALESCE(SUM(c.montant), 0)
+    FROM Charge c
+    WHERE c.dateCharge BETWEEN :start AND :end
+      AND c.pressing.id = :pressingId
+""")
+    BigDecimal sumChargesBetweenDatesAndPressing(
+            @Param("start") LocalDate start,
+            @Param("end") LocalDate end,
+            @Param("pressingId") Long pressingId
+    );
+
+
+    // 🔹 Charges d’une année POUR UN PRESSING
+    @Query("""
+        SELECT c
+        FROM Charge c
+        WHERE YEAR(c.dateCharge) = :annee
+          AND c.pressing.id = :pressingId
+    """)
+    List<Charge> findChargesByYearAndPressing(
+            @Param("annee") int annee,
+            @Param("pressingId") Long pressingId
+    );
 }

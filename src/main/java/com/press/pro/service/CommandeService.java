@@ -458,26 +458,41 @@ public class CommandeService {
     }
 
 
-    //  Chiffre d'affaires total
+
+
+    // 🔹 Chiffre d'affaires total encaissé
+//    public BigDecimal getChiffreAffairesTotal() {
+//        Long pressingId = getUserConnecte().getPressing().getId();
+//        Long montant = commandeRepository.getChiffreAffaires(pressingId);
+//        return BigDecimal.valueOf(montant != null ? montant : 0L);
+//    }
+
+    // 🔹 Chiffre d'affaires total encaissé
     public BigDecimal getChiffreAffairesTotal() {
-        Long pressingId = getUserConnecte().getPressing().getId();
-        return commandeRepository.sumChiffreAffairesTotal(pressingId);
+        Long pressingId = getUserConnecte().getPressing().getId(); // assure-toi que c’est le bon pressing
+
+        // Vérification/debug
+        List<Commande> commandes = commandeRepository.findAllByPressingIdAndStatutPaiement(pressingId, StatutPaiement.PAYE);
+        commandes.forEach(c -> System.out.println(c.getId() + " : " + c.getMontantPaye()));
+
+        // Somme
+        Long montant = commandeRepository.getChiffreAffaires(pressingId, StatutPaiement.PAYE);
+
+        return BigDecimal.valueOf(montant != null ? montant : 0L);
     }
+
+
 
 
     // 🔹 Chiffre d'affaires journalier
 
 
-    public Double getCAJournalier() {
+    public BigDecimal getCAJournalier() {
         Utilisateur user = getUserConnecte();
-        List<Commande> commandes = commandeRepository.findAllByPressingId(user.getPressing().getId());
+        Long pressingId = user.getPressing().getId();
 
-        double caDuJour = commandes.stream()
-                .mapToDouble(c -> c.getMontantPayeAujourdHui() != null ? c.getMontantPayeAujourdHui() : 0.0)
-                .sum();
-
-
-        return caDuJour;
+        // Appel repository sans passer LocalDate
+        return commandeRepository.sumCAJournalier(pressingId);
     }
 
 

@@ -56,6 +56,7 @@ public class Commande {
         @Column(
                 nullable = false
         )
+
         private double montantPaye;
         @Column(
                 nullable = false

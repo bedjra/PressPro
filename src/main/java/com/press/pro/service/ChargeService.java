@@ -9,6 +9,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -100,6 +101,36 @@ public class ChargeService {
 
         return chargeRepository.sumByPressingId(pressingId);
     }
+
+
+    ///  /charges mensuel
+    public BigDecimal getTotalChargesMoisCourant() {
+        Utilisateur user = getUserConnecte();
+        Long pressingId = user.getPressing().getId();
+
+        LocalDate now = LocalDate.now();
+        LocalDate start = now.withDayOfMonth(1);
+        LocalDate end = now.withDayOfMonth(now.lengthOfMonth());
+
+        return chargeRepository
+                .sumChargesBetweenDatesAndPressing(start, end, pressingId);
+    }
+
+
+    ///  /charges annuel
+    public BigDecimal getTotalChargesAnneeCourante() {
+        Utilisateur user = getUserConnecte();
+        Long pressingId = user.getPressing().getId();
+
+        int annee = LocalDate.now().getYear();
+
+        LocalDate start = LocalDate.of(annee, 1, 1);
+        LocalDate end = LocalDate.of(annee, 12, 31);
+
+        return chargeRepository
+                .sumChargesBetweenDatesAndPressing(start, end, pressingId);
+    }
+
 
 
 }

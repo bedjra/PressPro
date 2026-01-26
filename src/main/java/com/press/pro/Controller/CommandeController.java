@@ -115,7 +115,7 @@ public class CommandeController {
 
 
     @GetMapping("/jour")
-    public Double getCAJournalier() {
+    public BigDecimal getCAJournalier() {
         return commandeService.getCAJournalier();
     }
 
@@ -136,11 +136,12 @@ public class CommandeController {
         return commandeService.getTotalImpayes();
     }
 
+    // 🔹 Endpoint pour le chiffre d'affaires total
     @GetMapping("/totaux")
-    public BigDecimal getChiffreAffairesTotal() {
-        return commandeService.getChiffreAffairesTotal();
+    public ResponseEntity<BigDecimal> getChiffreAffaires() {
+        BigDecimal chiffreAffaires = commandeService.getChiffreAffairesTotal();
+        return ResponseEntity.ok(chiffreAffaires);
     }
-
 
 
 }

@@ -17,6 +17,7 @@ public class ResultatService {
 
     public BigDecimal getResultatNet() {
         BigDecimal totalCa = commandeService.getChiffreAffairesTotal();
+
         BigDecimal totalCharges = chargeService.getTotalCharges();
 
         return totalCa.subtract(totalCharges); // résultat = CA - Charges
