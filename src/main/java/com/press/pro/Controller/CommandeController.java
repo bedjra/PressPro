@@ -124,9 +124,11 @@ public class CommandeController {
         return commandeService.getCAHebdomadaire();
     }
 
+
     @GetMapping("/mensuel")
-    public Double getCAMensuel() {
-        return commandeService.getCAMensuel();
+    public ResponseEntity<Double> getCAMensuel() {
+        Double caMensuel = commandeService.getCAMensuel(); // utilise sumCAMensuelExact en backend
+        return ResponseEntity.ok(caMensuel);
     }
 
 

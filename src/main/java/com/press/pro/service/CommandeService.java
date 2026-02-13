@@ -510,15 +510,15 @@ public class CommandeService {
     }
 
     // 🔹 Chiffre d'affaires mensuel
+
+
     public Double getCAMensuel() {
         Utilisateur user = getUserConnecte();
-        LocalDate debut = LocalDate.now().withDayOfMonth(1);
-        LocalDate fin = LocalDate.now().withDayOfMonth(LocalDate.now().lengthOfMonth());
-
-        return Math.round(commandeRepository
-                .sumMontantNetBetweenDatesAndPressing(debut, fin, user.getPressing().getId())
-                .orElse(0.0) * 100.0) / 100.0;
+        return Math.round(
+                commandeRepository.sumCAMensuelExact(user.getPressing().getId()) * 100.0
+        ) / 100.0;
     }
+
 
     // 🔹 Chiffre d'affaires annuel
     public Double getCAAnnuel() {
