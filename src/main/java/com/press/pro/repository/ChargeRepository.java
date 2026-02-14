@@ -18,18 +18,20 @@ public interface ChargeRepository extends JpaRepository<Charge, Long> {
     List<Charge> findDistinctByPressingId(@Param("pressingId") Long pressingId);
 
 
-    // ✅ Total des charges entre deux dates (hebdo, mensuel, annuel, etc.)
-//    @Query("""
-//        SELECT COALESCE(SUM(c.montant), 0)
-//        FROM Charge c
-//        WHERE c.dateCharge BETWEEN :start AND :end
-//          AND c.pressing.id = :pressingId
-//    """)
-//    Double sumChargesBetweenDatesAndPressing(
-//            @Param("start") LocalDate start,
-//            @Param("end") LocalDate end,
-//            @Param("pressingId") Long pressingId
-//    );
+    // ✅ Filtrage par dates pour le mois
+    @Query("""
+    SELECT c FROM Charge c
+    WHERE c.pressing.id = :pressingId
+    AND c.dateCharge BETWEEN :start AND :end
+""")
+    List<Charge> findChargesBetweenDatesAndPressing(
+            @Param("start") LocalDate start,
+            @Param("end") LocalDate end,
+            @Param("pressingId") Long pressingId
+    );
+
+
+
 
     // ✅ Total des charges d’une journée
     @Query("""

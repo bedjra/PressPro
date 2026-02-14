@@ -1,6 +1,7 @@
 package com.press.pro.service;
 
 import com.press.pro.Dto.DtoCommande;
+import com.press.pro.Dto.DtoCommandeSimple;
 import com.press.pro.Entity.*;
 import com.press.pro.enums.StatutCommande;
 import com.press.pro.enums.StatutPaiement;
@@ -20,6 +21,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -180,13 +182,29 @@ public class CommandeService {
         // 🔥 PAIEMENT
         // --------------------------------------------------
         // --------------------------------------------------
-        double montantPaye = dto.getMontantPaye() != null ? dto.getMontantPaye() : 0;
-        commande.setMontantPaye(montantPaye);
+        // --------------------------------------------------
 
-        // 🔥 reliquat NON géré ici
+
+        double montantPaye = dto.getMontantPaye() != null ? dto.getMontantPaye() : 0;
+
+// 🚨 Interdire montant négatif
+        if (montantPaye < 0) {
+            throw new IllegalArgumentException(
+                    "Le montant payé ne peut pas être négatif."
+            );
+        }
+
+// 🚨 Interdire dépassement du total
+        if (montantPaye > totalNet) {
+            throw new IllegalArgumentException(
+                    "Le montant payé (" + montantPaye +
+                            ") dépasse le montant total de la commande (" + totalNet + ")."
+            );
+        }
+
+        commande.setMontantPaye(montantPaye);
         commande.setReliquat(0);
 
-        // 🔥 calcul simple du reste à payer
         double resteAPayer = totalNet - montantPaye;
 
         if (resteAPayer > 0) {
@@ -201,10 +219,8 @@ public class CommandeService {
             commande.setStatutPaiement(StatutPaiement.PAYE);
         }
 
-
-
-
         return commandeRepository.save(commande);
+
     }
 
 
@@ -312,13 +328,31 @@ public class CommandeService {
                 .orElseThrow(() -> new RuntimeException("Commande introuvable : " + commandeId));
 
         double montantAvant = commande.getMontantPaye();
+        double totalNet = commande.getMontantNetTotal();
+
+        // 🚨 Sécurité : montant négatif
+        if (montantActuel < 0) {
+            throw new IllegalArgumentException("Le montant payé ne peut pas être négatif.");
+        }
+
+        // 🚨 Vérification dépassement AVANT modification
+        double nouveauTotal = montantAvant + montantActuel;
+
+        if (nouveauTotal > totalNet) {
+            throw new IllegalArgumentException(
+                    "Le montant total payé dépasse le total de la commande."
+            );
+        }
 
         // 🔹 Statut livré
         commande.setStatut(StatutCommande.LIVREE);
 
+        // 🔹 Mettre la date de livraison à aujourd’hui
+        commande.setDateLivraison(LocalDate.now());
+
         // 🔹 Paiement du jour
         if (montantActuel > 0) {
-            commande.setMontantPaye(montantAvant + montantActuel);
+            commande.setMontantPaye(nouveauTotal);
             commande.setMontantPayeAujourdHui(montantActuel);
         } else {
             commande.setMontantPayeAujourdHui(0.0);
@@ -328,22 +362,8 @@ public class CommandeService {
         double reliquatEffectif = reliquat != null ? reliquat : 0;
         commande.setReliquat(reliquatEffectif);
 
-        // 🔹 Recalcul explicite
-        double totalNet = commande.getMontantNetTotal();
-        double totalRegle = commande.getMontantPaye() + reliquatEffectif;
-        double reste = totalNet - totalRegle;
-
-        if (reste > 0) {
-            commande.setResteAPayer(reste);
-            commande.setStatutPaiement(
-                    totalRegle == 0
-                            ? StatutPaiement.NON_PAYE
-                            : StatutPaiement.PARTIELLEMENT_PAYE
-            );
-        } else {
-            commande.setResteAPayer(0);
-            commande.setStatutPaiement(StatutPaiement.PAYE);
-        }
+        // 🔹 Recalcul propre via méthode métier
+        commande.recalculerPaiement();
 
         // 🔹 Sauvegarde
         Commande saved = commandeRepository.save(commande);
@@ -362,7 +382,6 @@ public class CommandeService {
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(pdf);
     }
-
 
     // ------------------------------------------------------
     // DELETE une commande par id (avec vérif pressing)
@@ -540,6 +559,30 @@ public class CommandeService {
         return commandeRepository.sumResteAPayerByPressing(pressingId);
     }
 
+
+    public List<DtoCommandeSimple> getDetailsCommandesLivreesParJour() {
+        Long pressingId = getUserConnecte().getPressing().getId();
+        LocalDate today = LocalDate.now();
+
+        List<Commande> commandes = commandeRepository.findByStatutAndPressingIdAndDateLivraison(
+                StatutCommande.LIVREE,
+                pressingId,
+                today
+        );
+
+        return commandes.stream()
+                .map(c -> {
+                    DtoCommandeSimple dto = new DtoCommandeSimple();
+                    dto.setClientNom(c.getClient().getNom());
+                    dto.setDateReception(c.getDateReception());
+                    dto.setDateLivraison(c.getDateLivraison());
+                    dto.setMontantPaye(c.getMontantPaye());
+                    dto.setResteAPayer(c.getResteAPayer());
+                    dto.setReliquat(c.getReliquat());
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
 
 
 }

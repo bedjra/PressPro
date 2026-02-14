@@ -60,4 +60,13 @@ public class ChargeController {
     public BigDecimal getTotalChargesAnneeCourante() {
         return chargeService.getTotalChargesAnneeCourante();
     }
+
+
+    @GetMapping("/mois/liste")
+    public List<ChargeDTO> getChargesMoisCourant() {
+        return chargeService.findChargesMoisCourant();
+    }
+
+
+
 }

@@ -158,4 +158,27 @@ public interface CommandeRepository extends JpaRepository<Commande, Long> {
     Long getChiffreAffaires(@Param("pressingId") Long pressingId, @Param("statut") StatutPaiement statut);
 
 
+
+
+    /// //// 14 - 02
+    /// details commande livrees
+    @Query("""
+    SELECT c FROM Commande c
+    WHERE c.statut = :statut
+    AND c.pressing.id = :pressingId
+    AND c.dateLivraison = :date
+""")
+    List<Commande> findLivreesParJour(
+            @Param("statut") StatutCommande statut,
+            @Param("pressingId") Long pressingId,
+            @Param("date") LocalDate date
+    );
+
+
+    // 🔹 ici dashboard livraison liste
+    List<Commande> findByStatutAndPressingIdAndDateLivraison(
+            StatutCommande statut,
+            Long pressingId,
+            LocalDate dateLivraison
+    );
 }

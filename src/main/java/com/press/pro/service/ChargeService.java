@@ -133,4 +133,21 @@ public class ChargeService {
 
 
 
+    // 14 - 02
+    public List<ChargeDTO> findChargesMoisCourant() {
+        Utilisateur user = getUserConnecte();
+        Long pressingId = user.getPressing().getId();
+
+        LocalDate now = LocalDate.now();
+        LocalDate start = now.withDayOfMonth(1);
+        LocalDate end = now.withDayOfMonth(now.lengthOfMonth());
+
+        List<Charge> charges = chargeRepository.findChargesBetweenDatesAndPressing(start, end, pressingId);
+
+        return charges.stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+
 }

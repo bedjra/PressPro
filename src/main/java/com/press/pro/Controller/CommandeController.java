@@ -1,6 +1,7 @@
 package com.press.pro.Controller;
 
 import com.press.pro.Dto.DtoCommande;
+import com.press.pro.Dto.DtoCommandeSimple;
 import com.press.pro.Dto.StatutUpdateRequest;
 import com.press.pro.Entity.Commande;
 import com.press.pro.enums.StatutCommande;
@@ -143,6 +144,16 @@ public class CommandeController {
     public ResponseEntity<BigDecimal> getChiffreAffaires() {
         BigDecimal chiffreAffaires = commandeService.getChiffreAffairesTotal();
         return ResponseEntity.ok(chiffreAffaires);
+    }
+
+
+    //14 - 02
+
+    @GetMapping("/livree/detail")
+    public ResponseEntity<List<DtoCommandeSimple>> getDetailsLivrees() {
+        return ResponseEntity.ok(
+                commandeService.getDetailsCommandesLivreesParJour()
+        );
     }
 
 
