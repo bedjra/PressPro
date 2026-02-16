@@ -15,6 +15,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.math.BigDecimal;
 import java.time.DayOfWeek;
@@ -553,6 +555,7 @@ public class CommandeService {
 
 
 
+
     // 🔹 Total impayés
     public Double getTotalImpayes() {
         Long pressingId = getUserConnecte().getPressing().getId();
@@ -584,5 +587,34 @@ public class CommandeService {
                 .collect(Collectors.toList());
     }
 
+
+
+//    public Double getCAMensuel(int mois, int annee) {
+//        Utilisateur user = getUserConnecte();
+//
+//        LocalDate debut = LocalDate.of(annee, mois, 1);
+//        LocalDate fin = debut.withDayOfMonth(debut.lengthOfMonth());
+//
+//        return Math.round(
+//                commandeRepository
+//                        .sumMontantNetBetweenDatesAndPressing(debut, fin, user.getPressing().getId())
+//                        .orElse(0.0) * 100.0
+//        ) / 100.0;
+//    }
+//
+
+
+    public Double getCAMensuel(int mois, int annee) {
+        Utilisateur user = getUserConnecte();
+
+        LocalDate debut = LocalDate.of(annee, mois, 1);
+        LocalDate fin = debut.withDayOfMonth(debut.lengthOfMonth());
+
+        return Math.round(
+                commandeRepository
+                        .sumMontantNetBetweenDatesAndPressing(debut, fin, user.getPressing().getId())
+                        .orElse(0.0) * 100.0
+        ) / 100.0;
+    }
 
 }

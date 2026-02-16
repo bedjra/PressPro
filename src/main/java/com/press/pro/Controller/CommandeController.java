@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -155,6 +156,33 @@ public class CommandeController {
                 commandeService.getDetailsCommandesLivreesParJour()
         );
     }
+
+
+//    @GetMapping("/ca/mensuel")
+//    public Double getCAMensuel(
+//            @RequestParam(required = false) Integer mois
+//    ) {
+//        LocalDate now = LocalDate.now();
+//
+//        int moisFinal = (mois != null) ? mois : now.getMonthValue();
+//        int anneeFinal = now.getYear(); // année automatique
+//
+//        return commandeService.getCAMensuel(moisFinal, anneeFinal);
+//    }
+
+    @GetMapping("/ca/mensuel")
+    public Double getCAMensuel(
+            @RequestParam(required = false) Integer mois,
+            @RequestParam(required = false) Integer annee
+    ) {
+        LocalDate now = LocalDate.now();
+
+        int moisFinal = (mois != null) ? mois : now.getMonthValue();
+        int anneeFinal = (annee != null) ? annee : now.getYear();
+
+        return commandeService.getCAMensuel(moisFinal, anneeFinal);
+    }
+
 
 
 }

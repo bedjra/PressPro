@@ -103,19 +103,6 @@ public class ChargeService {
     }
 
 
-    ///  /charges mensuel
-    public BigDecimal getTotalChargesMoisCourant() {
-        Utilisateur user = getUserConnecte();
-        Long pressingId = user.getPressing().getId();
-
-        LocalDate now = LocalDate.now();
-        LocalDate start = now.withDayOfMonth(1);
-        LocalDate end = now.withDayOfMonth(now.lengthOfMonth());
-
-        return chargeRepository
-                .sumChargesBetweenDatesAndPressing(start, end, pressingId);
-    }
-
 
     ///  /charges annuel
     public BigDecimal getTotalChargesAnneeCourante() {
@@ -134,19 +121,39 @@ public class ChargeService {
 
 
     // 14 - 02
+
+
+
+
+
+
+    public BigDecimal getTotalChargesMoisCourant() {
+        return chargeRepository.getTotalMoisCourant();
+    }
+
     public List<ChargeDTO> findChargesMoisCourant() {
-        Utilisateur user = getUserConnecte();
-        Long pressingId = user.getPressing().getId();
-
-        LocalDate now = LocalDate.now();
-        LocalDate start = now.withDayOfMonth(1);
-        LocalDate end = now.withDayOfMonth(now.lengthOfMonth());
-
-        List<Charge> charges = chargeRepository.findChargesBetweenDatesAndPressing(start, end, pressingId);
-
-        return charges.stream()
+        return chargeRepository.findMoisCourant()
+                .stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
+    }
+
+
+
+
+
+
+    public BigDecimal getTotalChargesMensuel(int mois, int annee) {
+
+        Utilisateur user = getUserConnecte();
+
+        LocalDate debut = LocalDate.of(annee, mois, 1);
+        LocalDate fin = debut.withDayOfMonth(debut.lengthOfMonth());
+
+        BigDecimal charges = chargeRepository
+                .sumChargesBetweenDatesAndPressing(debut, fin, user.getPressing().getId());
+
+        return (charges != null) ? charges : BigDecimal.ZERO;
     }
 
 

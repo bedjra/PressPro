@@ -49,10 +49,7 @@ public class ChargeController {
     }
 
 
-    @GetMapping("/mois")
-    public BigDecimal getTotalChargesMoisCourant() {
-        return chargeService.getTotalChargesMoisCourant();
-    }
+
 
     // 🔹 TOTAL DES CHARGES DE L’ANNÉE COURANTE
     // ex: /api/charges/total-annee
@@ -62,10 +59,16 @@ public class ChargeController {
     }
 
 
+    @GetMapping("/mois")
+    public BigDecimal getTotalChargesMoisCourant() {
+        return chargeService.getTotalChargesMoisCourant();
+    }
+
     @GetMapping("/mois/liste")
     public List<ChargeDTO> getChargesMoisCourant() {
         return chargeService.findChargesMoisCourant();
     }
+
 
 
 

@@ -22,4 +22,16 @@ public class ResultatService {
 
         return totalCa.subtract(totalCharges); // résultat = CA - Charges
     }
+
+
+    public BigDecimal getResultatNetMensuel(int mois, int annee) {
+
+        Double ca = commandeService.getCAMensuel(mois, annee);
+
+        BigDecimal charges = chargeService.getTotalChargesMensuel(mois, annee);
+
+        return BigDecimal.valueOf(ca).subtract(charges);
+    }
+
+
 }

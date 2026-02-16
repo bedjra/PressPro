@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Map;
 
 @RestController
@@ -49,6 +50,20 @@ public class ResultatController {
         }
 
         return ResponseEntity.ok("Importation annulée.");
+    }
+
+
+
+    @GetMapping("/net/mois")
+    public BigDecimal getResultatNetMensuel(
+            @RequestParam(required = false) Integer mois
+    ) {
+        LocalDate now = LocalDate.now();
+
+        int moisFinal = (mois != null) ? mois : now.getMonthValue();
+        int anneeFinal = now.getYear();
+
+        return resultatService.getResultatNetMensuel(moisFinal, anneeFinal);
     }
 
 }

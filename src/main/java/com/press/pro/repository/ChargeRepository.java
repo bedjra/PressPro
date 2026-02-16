@@ -75,4 +75,25 @@ public interface ChargeRepository extends JpaRepository<Charge, Long> {
             @Param("annee") int annee,
             @Param("pressingId") Long pressingId
     );
+
+
+
+
+/// repartition des charges mois pR MOIS
+    @Query("""
+        SELECT COALESCE(SUM(c.montant), 0)
+        FROM Charge c
+        WHERE MONTH(c.dateCharge) = MONTH(CURRENT_DATE)
+          AND YEAR(c.dateCharge) = YEAR(CURRENT_DATE)
+    """)
+    BigDecimal getTotalMoisCourant();
+
+    @Query("""
+        SELECT c
+        FROM Charge c
+        WHERE MONTH(c.dateCharge) = MONTH(CURRENT_DATE)
+          AND YEAR(c.dateCharge) = YEAR(CURRENT_DATE)
+        ORDER BY c.dateCharge DESC
+    """)
+    List<Charge> findMoisCourant();
 }
