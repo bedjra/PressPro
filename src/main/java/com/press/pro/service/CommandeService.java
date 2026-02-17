@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -43,6 +44,10 @@ public class CommandeService {
 
     @Autowired
     private UtilisateurRepository utilisateurRepository;
+
+    @Autowired
+    private PaiementRepository paiementRepository;
+
 
     @Autowired
     private CommandePdfService commandePdfService;
@@ -179,52 +184,47 @@ public class CommandeService {
         }
 
         double totalNet = lignes.stream().mapToDouble(CommandeLigne::getMontantNet).sum();
+// --------------------------------------------------
+// 🔥 PAIEMENT
+// --------------------------------------------------
 
-        // --------------------------------------------------
-        // 🔥 PAIEMENT
-        // --------------------------------------------------
-        // --------------------------------------------------
-        // --------------------------------------------------
-
-
-        double montantPaye = dto.getMontantPaye() != null ? dto.getMontantPaye() : 0;
+        double montantVerse = dto.getMontantPaye() != null ? dto.getMontantPaye() : 0;
 
 // 🚨 Interdire montant négatif
-        if (montantPaye < 0) {
+        if (montantVerse < 0) {
             throw new IllegalArgumentException(
                     "Le montant payé ne peut pas être négatif."
             );
         }
 
-// 🚨 Interdire dépassement du total
-        if (montantPaye > totalNet) {
+// 🚨 Interdire dépassement du reste à payer
+        if (montantVerse > commande.getResteAPayer()) {
             throw new IllegalArgumentException(
-                    "Le montant payé (" + montantPaye +
-                            ") dépasse le montant total de la commande (" + totalNet + ")."
+                    "Le montant payé (" + montantVerse +
+                            ") dépasse le reste à payer (" + commande.getResteAPayer() + ")."
             );
         }
 
-        commande.setMontantPaye(montantPaye);
-        commande.setReliquat(0);
+// 🔥 1️⃣ Créer un enregistrement Paiement
+        if (montantVerse > 0) {
+            Paiement paiement = new Paiement();
+            paiement.setCommande(commande);
+            paiement.setPressing(commande.getPressing());
+            paiement.setMontant(montantVerse);
 
-        double resteAPayer = totalNet - montantPaye;
-
-        if (resteAPayer > 0) {
-            commande.setResteAPayer(resteAPayer);
-            commande.setStatutPaiement(
-                    montantPaye == 0
-                            ? StatutPaiement.NON_PAYE
-                            : StatutPaiement.PARTIELLEMENT_PAYE
-            );
-        } else {
-            commande.setResteAPayer(0);
-            commande.setStatutPaiement(StatutPaiement.PAYE);
+            paiementRepository.save(paiement);
         }
+
+// 🔥 2️⃣ Ajouter au cumul
+        double nouveauTotalPaye = commande.getMontantPaye() + montantVerse;
+        commande.setMontantPaye(nouveauTotalPaye);
+
+// 🔥 3️⃣ Recalcul automatique
+        commande.recalculerPaiement();
 
         return commandeRepository.save(commande);
 
     }
-
 
     // Sauvegarde + génération PDF
     public ResponseEntity<byte[]> saveCommandeEtTelechargerPdf(DtoCommande dto) {
@@ -337,7 +337,7 @@ public class CommandeService {
             throw new IllegalArgumentException("Le montant payé ne peut pas être négatif.");
         }
 
-        // 🚨 Vérification dépassement AVANT modification
+        // 🚨 Vérifier dépassement
         double nouveauTotal = montantAvant + montantActuel;
 
         if (nouveauTotal > totalNet) {
@@ -346,31 +346,33 @@ public class CommandeService {
             );
         }
 
-        // 🔹 Statut livré
+        // 🔹 Mettre statut livré
         commande.setStatut(StatutCommande.LIVREE);
-
-        // 🔹 Mettre la date de livraison à aujourd’hui
         commande.setDateLivraison(LocalDate.now());
 
-        // 🔹 Paiement du jour
+        // 🔥 1️⃣ Enregistrer un paiement si montant > 0
         if (montantActuel > 0) {
+            Paiement paiement = new Paiement();
+            paiement.setCommande(commande);
+            paiement.setPressing(commande.getPressing());
+            paiement.setMontant(montantActuel);
+
+            paiementRepository.save(paiement);
+
+            // Ajouter au cumul
             commande.setMontantPaye(nouveauTotal);
-            commande.setMontantPayeAujourdHui(montantActuel);
-        } else {
-            commande.setMontantPayeAujourdHui(0.0);
         }
 
-        // 🔹 Reliquat OPTIONNEL
+        // 🔹 Reliquat optionnel
         double reliquatEffectif = reliquat != null ? reliquat : 0;
         commande.setReliquat(reliquatEffectif);
 
-        // 🔹 Recalcul propre via méthode métier
+        // 🔹 Recalcul métier
         commande.recalculerPaiement();
 
-        // 🔹 Sauvegarde
         Commande saved = commandeRepository.save(commande);
 
-        // 🔹 PDF
+        // 🔹 Génération PDF
         byte[] pdf = statutCommandePdfService.genererStatutPdf(
                 saved,
                 montantActuel,
@@ -508,27 +510,40 @@ public class CommandeService {
     // 🔹 Chiffre d'affaires journalier
 
 
+
     public BigDecimal getCAJournalier() {
+
         Utilisateur user = getUserConnecte();
         Long pressingId = user.getPressing().getId();
 
-        // Appel repository sans passer LocalDate
-        return commandeRepository.sumCAJournalier(pressingId);
+        return paiementRepository.sumCAJournalier(pressingId);
     }
-
 
 
 
     // 🔹 Chiffre d'affaires hebdomadaire
-    public Double getCAHebdomadaire() {
-        Utilisateur user = getUserConnecte();
-        LocalDate debut = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
-        LocalDate fin = LocalDate.now().with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
 
-        return Math.round(commandeRepository
-                .sumMontantNetBetweenDatesAndPressing(debut, fin, user.getPressing().getId())
-                .orElse(0.0) * 100.0) / 100.0;
+
+    public Double getCAHebdomadaire() {
+
+        Utilisateur user = getUserConnecte();
+        Long pressingId = user.getPressing().getId();
+
+        LocalDateTime debut = LocalDate.now()
+                .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+                .atStartOfDay();
+
+        LocalDateTime fin = LocalDate.now()
+                .with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY))
+                .atTime(23, 59, 59);
+
+        Double ca = paiementRepository
+                .sumPaiementsEntreDates(debut, fin, pressingId)
+                .orElse(0.0);
+
+        return Math.round(ca * 100.0) / 100.0;
     }
+
 
     // 🔹 Chiffre d'affaires mensuel
 

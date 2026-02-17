@@ -119,25 +119,16 @@ public interface CommandeRepository extends JpaRepository<Commande, Long> {
     @Query("UPDATE Commande c SET c.montantPayeSemaine = 0")
     void resetMontantPayeSemaine();
 
-    // Somme des montants payés dans une semaine pour un pressing donné
-    @Query(value = """
-    SELECT COALESCE(SUM(montant_paye), 0)
-    FROM commande
-    WHERE pressing_id = :pressingId
-      AND statut_paiement = 'PAYE'
-      AND YEARWEEK(date_reception, 1) = YEARWEEK(CURDATE(), 1)
-""", nativeQuery = true)
-    BigDecimal sumCASemaineNative(@Param("pressingId") Long pressingId);
-
-
-    // 🔹 CA journalier fiable pour un pressing
-    @Query("SELECT COALESCE(SUM(c.montantPaye), 0) FROM Commande c " +
-            "WHERE c.pressing.id = :pressingId AND DATE(c.updatedAt) = CURRENT_DATE")
-    BigDecimal sumCAJournalier(@Param("pressingId") Long pressingId);
-
-
-
-
+//    // Somme des montants payés dans une semaine pour un pressing donné
+@Query("SELECT SUM(c.montantPayeAujourdHui) " +
+        "FROM Commande c " +
+        "WHERE c.pressing.id = :pressingId " +
+        "AND c.dateLivraison BETWEEN :debut AND :fin")
+Optional<Double> sumPaiementsEntreDates(
+        @Param("debut") LocalDate debut,
+        @Param("fin") LocalDate fin,
+        @Param("pressingId") Long pressingId
+);
 
     // 🔹 CA total pour un pressing
     @Query("""
@@ -181,4 +172,7 @@ public interface CommandeRepository extends JpaRepository<Commande, Long> {
             Long pressingId,
             LocalDate dateLivraison
     );
+
+
+
 }
