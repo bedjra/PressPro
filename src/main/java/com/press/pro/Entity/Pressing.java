@@ -31,11 +31,13 @@ public class Pressing {
             nullable = false
     )
     private boolean actif = true;
-    @OneToOne(
-            mappedBy = "pressing",
-            fetch = FetchType.LAZY
-    )
-    private Utilisateur admin;
+
+//    @OneToOne(
+//            mappedBy = "pressing",
+//            fetch = FetchType.LAZY
+//    )
+//    private Utilisateur admin;
+
     @OneToMany(
             mappedBy = "pressing",
             cascade = {CascadeType.ALL},
@@ -155,13 +157,13 @@ public class Pressing {
         this.adresse = adresse;
     }
 
-    public Utilisateur getAdmin() {
-        return this.admin;
-    }
-
-    public void setAdmin(Utilisateur admin) {
-        this.admin = admin;
-    }
+//    public Utilisateur getAdmin() {
+//        return this.admin;
+//    }
+//
+//    public void setAdmin(Utilisateur admin) {
+//        this.admin = admin;
+//    }
 
     public boolean isActif() {
         return this.actif;
