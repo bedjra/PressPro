@@ -1,5 +1,6 @@
 package com.press.pro.service;
 
+import com.press.pro.Dto.CAMoisDTO;
 import com.press.pro.Dto.DtoCommande;
 import com.press.pro.Dto.DtoCommandeSimple;
 import com.press.pro.Entity.*;
@@ -634,6 +635,10 @@ public class CommandeService {
 
 
 
+    public List<CAMoisDTO> getCAParMois() {
+        Utilisateur user = getUserConnecte();
+        return commandeRepository.sumCAParMois(user.getPressing().getId());
+    }
 
 
 }
