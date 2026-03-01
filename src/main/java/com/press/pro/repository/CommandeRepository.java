@@ -1,6 +1,7 @@
 package com.press.pro.repository;
 
 
+import com.press.pro.Dto.CAMoisDTO;
 import com.press.pro.Entity.Pressing;
 import com.press.pro.enums.StatutCommande;
 import com.press.pro.enums.StatutPaiement;
@@ -174,5 +175,19 @@ Optional<Double> sumPaiementsEntreDates(
     );
 
 
+
+
+    @Query("""
+    SELECT new com.tonpackage.dto.CAMoisDTO(
+        YEAR(c.dateCommande),
+        MONTH(c.dateCommande),
+        SUM(c.montant)
+    )
+    FROM Commande c
+    WHERE c.pressing.id = :pressingId
+    GROUP BY YEAR(c.dateCommande), MONTH(c.dateCommande)
+    ORDER BY YEAR(c.dateCommande), MONTH(c.dateCommande)
+""")
+    List<CAMoisDTO> sumCAParMois(@Param("pressingId") Long pressingId);
 
 }
