@@ -547,15 +547,25 @@ public class CommandeService {
 
 
     // 🔹 Chiffre d'affaires mensuel
-
-
     public Double getCAMensuel() {
-        Utilisateur user = getUserConnecte();
-        return Math.round(
-                commandeRepository.sumCAMensuelExact(user.getPressing().getId()) * 100.0
-        ) / 100.0;
-    }
 
+        Utilisateur user = getUserConnecte();
+        Long pressingId = user.getPressing().getId();
+
+        LocalDateTime debut = LocalDate.now()
+                .withDayOfMonth(1)
+                .atStartOfDay();
+
+        LocalDateTime fin = LocalDate.now()
+                .withDayOfMonth(LocalDate.now().lengthOfMonth())
+                .atTime(23, 59, 59);
+
+        Double ca = paiementRepository
+                .sumPaiementsEntreDates(debut, fin, pressingId)
+                .orElse(0.0);
+
+        return Math.round(ca * 100.0) / 100.0;
+    }
 
     // 🔹 Chiffre d'affaires annuel
     public Double getCAAnnuel() {
@@ -605,40 +615,49 @@ public class CommandeService {
 
 
 
-//    public Double getCAMensuel(int mois, int annee) {
-//        Utilisateur user = getUserConnecte();
-//
-//        LocalDate debut = LocalDate.of(annee, mois, 1);
-//        LocalDate fin = debut.withDayOfMonth(debut.lengthOfMonth());
-//
-//        return Math.round(
-//                commandeRepository
-//                        .sumMontantNetBetweenDatesAndPressing(debut, fin, user.getPressing().getId())
-//                        .orElse(0.0) * 100.0
-//        ) / 100.0;
-//    }
-//
+
+
 
 
     public Double getCAMensuel(int mois, int annee) {
+
         Utilisateur user = getUserConnecte();
+        Long pressingId = user.getPressing().getId();
 
-        LocalDate debut = LocalDate.of(annee, mois, 1);
-        LocalDate fin = debut.withDayOfMonth(debut.lengthOfMonth());
+        LocalDateTime debut = LocalDate.of(annee, mois, 1)
+                .atStartOfDay();
 
-        return Math.round(
-                commandeRepository
-                        .sumMontantNetBetweenDatesAndPressing(debut, fin, user.getPressing().getId())
-                        .orElse(0.0) * 100.0
-        ) / 100.0;
+        LocalDateTime fin = LocalDate.of(annee, mois, 1)
+                .withDayOfMonth(LocalDate.of(annee, mois, 1).lengthOfMonth())
+                .atTime(23, 59, 59);
+
+        Double ca = paiementRepository
+                .sumPaiementsEntreDates(debut, fin, pressingId)
+                .orElse(0.0);
+
+        return Math.round(ca * 100.0) / 100.0;
     }
 
+    public Map<Integer, Map<Integer, Double>> getCAParMoisStructure() {
 
-
-    public List<CAMoisDTO> getCAParMois() {
         Utilisateur user = getUserConnecte();
-        return commandeRepository.sumCAParMois(user.getPressing().getId());
-    }
+        List<Object[]> resultats =
+                commandeRepository.sumCAParMois(user.getPressing().getId());
 
+        Map<Integer, Map<Integer, Double>> data = new LinkedHashMap<>();
+
+        for (Object[] row : resultats) {
+
+            Integer annee = ((Number) row[0]).intValue();
+            Integer mois = ((Number) row[1]).intValue();
+            Double total = ((Number) row[2]).doubleValue();
+
+            data
+                    .computeIfAbsent(annee, k -> new LinkedHashMap<>())
+                    .put(mois, Math.round(total * 100.0) / 100.0);
+        }
+
+        return data;
+    }
 
 }

@@ -177,17 +177,20 @@ Optional<Double> sumPaiementsEntreDates(
 
 
 
+
+
     @Query("""
-    SELECT new com.tonpackage.dto.CAMoisDTO(
-        YEAR(c.dateCommande),
-        MONTH(c.dateCommande),
-        SUM(c.montant)
-    )
+    SELECT 
+        YEAR(c.dateReception),
+        MONTH(c.dateReception),
+        SUM(c.montantPaye)
     FROM Commande c
     WHERE c.pressing.id = :pressingId
-    GROUP BY YEAR(c.dateCommande), MONTH(c.dateCommande)
-    ORDER BY YEAR(c.dateCommande), MONTH(c.dateCommande)
+      AND c.dateReception IS NOT NULL
+    GROUP BY YEAR(c.dateReception), MONTH(c.dateReception)
 """)
-    List<CAMoisDTO> sumCAParMois(@Param("pressingId") Long pressingId);
+    List<Object[]> sumCAParMois(@Param("pressingId") Long pressingId);
+
+
 
 }

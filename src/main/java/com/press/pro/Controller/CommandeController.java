@@ -1,5 +1,6 @@
 package com.press.pro.Controller;
 
+import com.press.pro.Dto.CAMoisDTO;
 import com.press.pro.Dto.DtoCommande;
 import com.press.pro.Dto.DtoCommandeSimple;
 import com.press.pro.Dto.StatutUpdateRequest;
@@ -204,5 +205,9 @@ public class CommandeController {
                 .body(pdf);
     }
 
+    @GetMapping("/graphe")
+    public Map<Integer, Map<Integer, Double>> getCAParMois() {
+    return commandeService.getCAParMoisStructure();
+}
 
 }

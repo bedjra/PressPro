@@ -32,4 +32,13 @@ AND DATE(p.datePaiement) = CURRENT_DATE
     );
 
 
+//    @Query("SELECT SUM(p.montant) " +
+//            "FROM Paiement p " +
+//            "WHERE p.pressing.id = :pressingId " +
+//            "AND p.datePaiement BETWEEN :debut AND :fin")
+//    Optional<Double> sumPaiementsMensuel(
+//            @Param("debut") LocalDateTime debut,
+//            @Param("fin") LocalDateTime fin,
+//            @Param("pressingId") Long pressingId
+//    );
 }
